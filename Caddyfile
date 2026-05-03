@@ -3,7 +3,11 @@
 	auto_https off
 }
 
-{$APP_DOMAIN::80} {
+# Bind to :80 always (works for local + Cloudflare tunnel). When APP_DOMAIN
+# is set, requests with that Host header still match because the site
+# address `:80` accepts any Host. Add a separate `{$APP_DOMAIN}` block here
+# only if you need hostname-specific routing or auto-HTTPS in prod.
+:80 {
 	encode gzip
 
 	# FastAPI backend at /api/*

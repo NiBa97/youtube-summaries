@@ -90,6 +90,20 @@ services:
     networks:
       - yts
 
+  # Opt-in: `docker compose --profile tunnel up -d tunnel`
+  # Spawns a Cloudflare quick-tunnel — public *.trycloudflare.com URL printed to logs.
+  # Anonymous, ephemeral, no account needed. URL changes on every restart.
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: yts-tunnel
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://caddy:80
+    depends_on:
+      - caddy
+    networks:
+      - yts
+
 networks:
   yts:
     driver: bridge
