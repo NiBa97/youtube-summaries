@@ -1,27 +1,27 @@
-{
-	# Disable automatic HTTPS for local dev. Override via APP_DOMAIN for prod.
-	auto_https off
-}
-
 # Bind to :80 always (works for local + Cloudflare tunnel). When APP_DOMAIN
 # is set, requests with that Host header still match because the site
 # address `:80` accepts any Host. Add a separate `{$APP_DOMAIN}` block here
 # only if you need hostname-specific routing or auto-HTTPS in prod.
 :80 {
+	log {
+		output stdout
+		format console
+	}
+
 	encode gzip
 
 	# FastAPI backend at /api/*
 	handle_path /api/* {
-		reverse_proxy backend:8000
+		reverse_proxy {$SERVICE_NAME_BACKEND}:8000
 	}
 
 	# Pocketbase at /pb/*  (admin UI: /pb/_/, API: /pb/api/*)
 	handle_path /pb/* {
-		reverse_proxy pocketbase:8090
+		reverse_proxy {$SERVICE_NAME_POCKETBASE}:8090
 	}
 
 	# Everything else -> frontend SPA
 	handle {
-		reverse_proxy frontend:80
+		reverse_proxy {$SERVICE_NAME_FRONTEND}:80
 	}
 }
