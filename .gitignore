@@ -1,0 +1,8 @@
+.env
+.env.local
+.env.*.local
+
+database/pb_data/*
+!database/pb_data/.gitkeep
+database/pb_migrations/*
+!database/pb_migrations/.gitkeep

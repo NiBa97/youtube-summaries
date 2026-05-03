@@ -1,0 +1,23 @@
+{
+	# Disable automatic HTTPS for local dev. Override via APP_DOMAIN for prod.
+	auto_https off
+}
+
+{$APP_DOMAIN::80} {
+	encode gzip
+
+	# FastAPI backend at /api/*
+	handle_path /api/* {
+		reverse_proxy backend:8000
+	}
+
+	# Pocketbase at /pb/*  (admin UI: /pb/_/, API: /pb/api/*)
+	handle_path /pb/* {
+		reverse_proxy pocketbase:8090
+	}
+
+	# Everything else -> frontend SPA
+	handle {
+		reverse_proxy frontend:80
+	}
+}

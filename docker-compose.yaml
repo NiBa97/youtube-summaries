@@ -1,0 +1,99 @@
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: yts-caddy
+    restart: unless-stopped
+    environment:
+      - APP_DOMAIN=${APP_DOMAIN:-}
+    ports:
+      - "${CADDY_HTTP_PORT:-80}:80"
+      - "${CADDY_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+      - pocketbase
+    networks:
+      - yts
+
+  pocketbase:
+    image: ghcr.io/muchobien/pocketbase:0.22.21
+    container_name: yts-pocketbase
+    restart: unless-stopped
+    command:
+      - --dir=/pb/pb_data
+      - --migrationsDir=/pb/pb_migrations
+      - --hooksDir=/pb/pb_hooks
+      - --http=0.0.0.0:8090
+    expose:
+      - "8090"
+    volumes:
+      - ./database/pb_data:/pb/pb_data
+      - ./database/pb_migrations:/pb/pb_migrations
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8090/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - yts
+
+  backend:
+    build:
+      context: ./backend
+    container_name: yts-backend
+    restart: unless-stopped
+    command:
+      - uvicorn
+      - app.main:app
+      - --host=0.0.0.0
+      - --port=8000
+      - --root-path=/api
+      - --proxy-headers
+      - --forwarded-allow-ips=*
+    environment:
+      - PB_URL=${PB_URL:-http://pocketbase:8090}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:-*}
+      - PB_SUPERUSER_EMAIL=${PB_SUPERUSER_EMAIL:-}
+      - PB_SUPERUSER_PASSWORD=${PB_SUPERUSER_PASSWORD:-}
+    expose:
+      - "8000"
+    depends_on:
+      pocketbase:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - yts
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-/api}
+        VITE_PB_URL: ${VITE_PB_URL:-/pb}
+    container_name: yts-frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - backend
+      - pocketbase
+    networks:
+      - yts
+
+networks:
+  yts:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

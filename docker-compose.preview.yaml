@@ -1,0 +1,63 @@
+# Preview / dev override. Use:
+#   docker compose -f docker-compose.yaml -f docker-compose.preview.yaml up
+# Hot reload:
+#   - backend: uvicorn --reload (watches /app)
+#   - frontend: vite dev server with HMR over Caddy WebSocket proxy
+#   - pocketbase: --dev flag (verbose logs); migrations auto-apply on restart
+
+services:
+  caddy:
+    volumes:
+      - ./Caddyfile.preview:/etc/caddy/Caddyfile:ro
+
+  backend:
+    image: python:3.12-slim
+    build: !reset null
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - |
+        pip install --no-cache-dir -e . &&
+        exec uvicorn app.main:app \
+          --host 0.0.0.0 --port 8000 \
+          --reload --reload-dir /app/app \
+          --root-path /api \
+          --proxy-headers --forwarded-allow-ips=*
+    volumes:
+      - ./backend:/app
+      - backend_pip_cache:/root/.cache/pip
+
+  frontend:
+    image: node:22-alpine
+    build: !reset null
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - |
+        npm install &&
+        exec npm run dev -- --host 0.0.0.0 --port 5173
+    environment:
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL:-/api}
+      - VITE_PB_URL=${VITE_PB_URL:-/pb}
+      # Polling fallback for filesystems where inotify doesn't propagate (e.g. some bind mounts)
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    expose:
+      - "5173"
+
+  pocketbase:
+    command:
+      - --dev
+      - --dir=/pb/pb_data
+      - --migrationsDir=/pb/pb_migrations
+      - --hooksDir=/pb/pb_hooks
+      - --http=0.0.0.0:8090
+
+volumes:
+  backend_pip_cache:
+  frontend_node_modules:
