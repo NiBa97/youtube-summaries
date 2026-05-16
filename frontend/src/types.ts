@@ -56,3 +56,6 @@ export type Filters = {
   q: string
   channelId: string | null
 }
+
+export type SlidePalette = 'paper' | 'dark' | 'sepia'
+export type SlideAspect = '16:9' | '4:3' | '1:1'

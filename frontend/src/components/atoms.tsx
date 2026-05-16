@@ -66,9 +66,10 @@ type BtnProps = {
   icon?: IconName
   title?: string
   active?: boolean
+  disabled?: boolean
 }
 
-export function Btn({ children, onClick, kind = 'ghost', size = 'md', icon, title, active }: BtnProps) {
+export function Btn({ children, onClick, kind = 'ghost', size = 'md', icon, title, active, disabled }: BtnProps) {
   const base = {
     appearance: 'none' as const,
     border: 0,
@@ -94,11 +95,14 @@ export function Btn({ children, onClick, kind = 'ghost', size = 'md', icon, titl
     <button
       onClick={onClick}
       title={title}
-      style={{ ...base, ...variants[kind] }}
+      disabled={disabled}
+      style={{ ...base, ...variants[kind], opacity: disabled ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}
       onMouseEnter={(e) => {
+        if (disabled) return
         if (kind === 'ghost' && !active) e.currentTarget.style.background = 'var(--surface-2)'
       }}
       onMouseLeave={(e) => {
+        if (disabled) return
         if (kind === 'ghost' && !active) e.currentTarget.style.background = 'transparent'
       }}
     >

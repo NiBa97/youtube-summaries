@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Video } from '../types'
 import { Icon } from './Icon'
 import { Btn } from './atoms'
+import { generateSlides } from '../lib/api'
 
 type Props = {
   open: boolean
@@ -32,6 +33,7 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -39,6 +41,7 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
       setUrl('')
       setTitle('')
       setError(null)
+      setLoading(false)
       setTimeout(() => inputRef.current?.focus(), 30)
     }
   }, [open])
@@ -46,46 +49,58 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape' && !loading) onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  }, [open, onClose, loading])
 
   if (!open) return null
 
-  const submit = () => {
+  const submit = async () => {
     const id = parseYouTubeId(url)
     if (!id) {
       setError('Could not parse a YouTube video ID from that URL.')
       return
     }
-    const finalTitle = title.trim() || 'Untitled video'
-    const now = new Date().toISOString()
-    const video: Video = {
-      id: `u-${Date.now()}`,
-      channelId: null,
-      oneshot: true,
-      addedBy: 'user',
-      title: finalTitle,
-      duration: 0,
-      publishedAt: now,
-      addedAt: now,
-      youtubeId: id,
-      sourceUrl: url.trim(),
-      status: 'unread',
-      starred: false,
-      tags: [],
-      readingTime: 0,
-      summary: {},
+    setLoading(true)
+    setError(null)
+    try {
+      const resp = await generateSlides(url.trim(), { title: title.trim() || undefined })
+      const now = new Date().toISOString()
+      const video: Video = {
+        id: `u-${Date.now()}`,
+        channelId: null,
+        oneshot: true,
+        addedBy: 'user',
+        title: resp.title || title.trim() || 'Untitled video',
+        duration: resp.duration || 0,
+        publishedAt: now,
+        addedAt: now,
+        youtubeId: id,
+        sourceUrl: url.trim(),
+        status: 'unread',
+        starred: false,
+        tags: [],
+        readingTime: Math.max(1, Math.round((resp.duration || 0) / 60)),
+        tldr: resp.tldr,
+        summary: resp.summary,
+      }
+      onAdd(video)
+      onClose()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Slide generation failed.'
+      setError(msg)
+    } finally {
+      setLoading(false)
     }
-    onAdd(video)
-    onClose()
   }
 
   return (
     <div
-      onClick={onClose}
+      onClick={() => {
+        if (!loading) onClose()
+      }}
       style={{
         position: 'fixed',
         inset: 0,
@@ -141,15 +156,17 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
           </div>
           <button
             onClick={onClose}
+            disabled={loading}
             title="Close"
             style={{
               appearance: 'none',
               border: 0,
               background: 'transparent',
-              cursor: 'pointer',
+              cursor: loading ? 'not-allowed' : 'pointer',
               color: 'var(--muted)',
               padding: 4,
               borderRadius: 4,
+              opacity: loading ? 0.4 : 1,
             }}
           >
             <Icon name="close" size={14} />
@@ -161,6 +178,7 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
             <input
               ref={inputRef}
               value={url}
+              disabled={loading}
               onChange={(e) => {
                 setUrl(e.target.value)
                 setError(null)
@@ -172,14 +190,15 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
               style={inputStyle}
             />
           </Field>
-          <Field label="TITLE (OPTIONAL)">
+          <Field label="TITLE (OPTIONAL OVERRIDE)">
             <input
               value={title}
+              disabled={loading}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') submit()
               }}
-              placeholder="Leave blank to fill in later"
+              placeholder="Leave blank to use YouTube title"
               style={inputStyle}
             />
           </Field>
@@ -200,7 +219,9 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
           )}
 
           <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--muted)', letterSpacing: '.04em', lineHeight: 1.5 }}>
-            Frontend-only stub. Backend summary generation lands later — for now the new entry shows up in the list and the player loads the YouTube embed.
+            {loading
+              ? 'Fetching transcript and generating slides — this can take 10–30s…'
+              : 'Backend fetches the transcript and asks Gemini for a Reel Notes deck.'}
           </div>
         </div>
 
@@ -214,11 +235,11 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
             background: 'var(--bg)',
           }}
         >
-          <Btn onClick={onClose} kind="ghost">
+          <Btn onClick={onClose} kind="ghost" disabled={loading}>
             Cancel
           </Btn>
-          <Btn onClick={submit} kind="accent" icon="plus">
-            Add video
+          <Btn onClick={submit} kind="accent" icon="plus" disabled={loading}>
+            {loading ? 'Generating…' : 'Add video'}
           </Btn>
         </div>
       </div>

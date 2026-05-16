@@ -24,9 +24,11 @@ docker compose --profile tunnel up -d tunnel                         # public Cl
 ```
 
 URLs (everything one origin via Caddy):
-- Frontend: `http://localhost`
-- Backend Swagger: `http://localhost/api/docs`
-- Pocketbase admin: `http://localhost/pb/_/`
+- Frontend: `http://192.168.0.157`
+- Backend Swagger: `http://192.168.0.157/api/docs`
+- Pocketbase admin: `http://192.168.0.157/pb/_/`
+
+**Host policy:** always bind dev servers to `0.0.0.0` and use the LAN IP `192.168.0.157` in URLs, examples, and curl commands. Never use `localhost` or `127.0.0.1` — the dev box is accessed from other machines on the network.
 
 First-time Pocketbase admin bootstrap:
 
