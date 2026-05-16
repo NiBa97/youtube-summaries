@@ -7,6 +7,10 @@
 
 services:
   caddy:
+    environment:
+      # Compose `:-` treats empty string as unset → default `:80` for local dev.
+      # When APP_DOMAIN is set (Coolify prod), the real value flows through.
+      - APP_DOMAIN=${APP_DOMAIN:-:80}
     volumes:
       - ./Caddyfile.preview:/etc/caddy/Caddyfile:ro
 

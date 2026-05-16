@@ -2,7 +2,12 @@
 	auto_https off
 }
 
-{$APP_DOMAIN::80} {
+:80 {
+	log {
+		output stdout
+		format console
+	}
+
 	encode gzip
 
 	# FastAPI dev server (uvicorn --reload) at /api/*

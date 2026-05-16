@@ -58,10 +58,10 @@ npm run lint     # eslint .
 
 ### Data flow (v0 — synchronous, no jobs)
 
-1. Frontend calls `POST /api/transcript` with `{ url, languages? }`. Backend extracts the 11-char video id (handles `youtube.com/watch`, `youtu.be`, `/embed/`, `/shorts/`, `/v/`, or bare id) and returns transcript snippets synchronously.
-2. Frontend persists video metadata (and, once implemented, generated slides) directly to Pocketbase from the browser.
-3. **Transcripts are never stored in the DB** — they can always be re-fetched from the backend.
-4. Slides generation will land later as `POST /api/slides`, following the same synchronous pattern. If latency forces it, switch to a status/polling model and have the backend write `slides_html` directly into Pocketbase.
+1. Frontend calls `POST /api/transcript` with `{ url, languages? }` to fetch transcript snippets, or `POST /api/slides` with `{ url, languages? }` to fetch transcript **and** generate slides in one call. Backend extracts the 11-char video id (handles `youtube.com/watch`, `youtu.be`, `/embed/`, `/shorts/`, `/v/`, or bare id).
+2. `/api/slides` returns `{ video_id, slides_html, transcript }`. Gemini is called server-side; the API key (`GEMINI_API_KEY`) lives in the backend's `.env` and never reaches the browser. See `docs/adr/0002-gemini-call-via-backend.md`.
+3. Frontend persists video metadata, the `transcript` JSON, and `slides_html` to Pocketbase from the browser. Transcripts are stored so the frontend can re-render slides offline without re-calling the backend; they can also be re-fetched on demand via `/api/transcript`.
+4. If latency forces it, switch to a status/polling model and have the backend write directly into Pocketbase.
 
 ### No-auth single-user assumption
 
@@ -69,7 +69,7 @@ Pocketbase rules on the `videos` collection are wide-open (`listRule`/`viewRule`
 
 ### Pocketbase schema changes
 
-All schema work goes through migration files in `database/pb_migrations/` (JS migrations, name format `<unix-ts>_<slug>.js`, both `up` and `down`). Do **not** rely on admin-UI changes for anything that needs to be reproducible — they get overwritten when `pb_data/` is reset. Existing collection: `videos` (id `videos00000videos`) with fields `url`, `video_id` (unique, 11 chars), `title`, `status` (`pending|transcribed|slides_ready|error`), `slides_html`, `error`.
+All schema work goes through migration files in `database/pb_migrations/` (JS migrations, name format `<unix-ts>_<slug>.js`, both `up` and `down`). Do **not** rely on admin-UI changes for anything that needs to be reproducible — they get overwritten when `pb_data/` is reset. Existing collection: `videos` (id `videos00000videos`) with fields `url`, `video_id` (unique, 11 chars), `title`, `status` (`pending|transcribed|slides_ready|error`), `slides_html`, `transcript` (json), `error`.
 
 ### Frontend layout
 

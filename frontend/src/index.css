@@ -57,10 +57,14 @@ body {
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow: hidden;
 }
 
-#root {
+body.app-shell {
+  overflow: hidden;
+  height: 100vh;
+}
+
+body.app-shell #root {
   height: 100vh;
 }
 
