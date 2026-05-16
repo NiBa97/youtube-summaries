@@ -17,6 +17,10 @@ function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', 'paper')
+    document.body.classList.add('app-shell')
+    return () => {
+      document.body.classList.remove('app-shell')
+    }
   }, [])
 
   const filteredVideos = useMemo(() => {
