@@ -5,6 +5,12 @@ services:
     restart: unless-stopped
     expose:
       - "80"
+    ports:
+      - "${CADDY_HTTP_PORT:-8081}:80"
+    environment:
+      - SERVICE_NAME_BACKEND=backend
+      - SERVICE_NAME_POCKETBASE=pocketbase
+      - SERVICE_NAME_FRONTEND=frontend
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -53,6 +59,7 @@ services:
       - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS:-*}
       - PB_SUPERUSER_EMAIL=${PB_SUPERUSER_EMAIL:-}
       - PB_SUPERUSER_PASSWORD=${PB_SUPERUSER_PASSWORD:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     expose:
       - "8000"
     depends_on:

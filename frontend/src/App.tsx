@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
-import { CHANNELS, VIDEOS } from './data'
+import { CHANNELS } from './data'
+import { listVideos } from './lib/pb'
 import type { Filters, Video } from './types'
 import { FilterRail } from './components/FilterRail'
 import { ListToolbar } from './components/ListToolbar'
@@ -10,13 +11,23 @@ import { DeckPanel } from './components/DeckPanel'
 import { AddVideoDialog } from './components/AddVideoDialog'
 
 function App() {
-  const [videos, setVideos] = useState<Video[]>(VIDEOS)
+  const [videos, setVideos] = useState<Video[]>([])
   const [filters, setFilters] = useState<Filters>({ q: '', channelId: null })
-  const [selectedId, setSelectedId] = useState<string | null>(VIDEOS[0]?.id ?? null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [jumpStart, setJumpStart] = useState<number | null>(null)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', 'paper')
+  }, [])
+
+  useEffect(() => {
+    listVideos()
+      .then((vs) => {
+        setVideos(vs)
+        setSelectedId((cur) => cur ?? vs[0]?.id ?? null)
+      })
+      .catch((e) => console.error('listVideos failed', e))
   }, [])
 
   const filteredVideos = useMemo(() => {
@@ -49,14 +60,16 @@ function App() {
 
   const onSelect = (id: string) => {
     setSelectedId(id)
+    setJumpStart(null)
     setVideos((vs) =>
       vs.map((v) => (v.id === id && v.status === 'unread' ? { ...v, status: 'reading' as const } : v)),
     )
   }
 
   const onAddVideo = (video: Video) => {
-    setVideos((vs) => [video, ...vs])
+    setVideos((vs) => [video, ...vs.filter((v) => v.id !== video.id)])
     setSelectedId(video.id)
+    setJumpStart(null)
   }
 
   return (
@@ -92,11 +105,11 @@ function App() {
         <Panel id="right" defaultSize="46%" minSize="320px">
           <Group orientation="vertical" id="reel-v" style={{ height: '100%' }}>
             <Panel id="player" defaultSize="50%" minSize="160px">
-              <VideoPanel video={selectedVideo} />
+              <VideoPanel video={selectedVideo} start={jumpStart} />
             </Panel>
             <Separator className="rs-sep rs-sep-v" />
             <Panel id="deck" defaultSize="50%" minSize="160px">
-              <DeckPanel video={selectedVideo} channel={selectedChannel} />
+              <DeckPanel video={selectedVideo} channel={selectedChannel} onJump={setJumpStart} />
             </Panel>
           </Group>
         </Panel>

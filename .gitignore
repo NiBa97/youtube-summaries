@@ -4,3 +4,4 @@
 
 database/pb_data/*
 !database/pb_data/.gitkeep
+.worktrees/

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import math
 import re
+from typing import Literal
 from urllib.parse import parse_qs, urlparse
 
 from fastapi import FastAPI, HTTPException
@@ -13,7 +15,7 @@ from youtube_transcript_api._errors import (
     VideoUnavailable,
 )
 
-from .gemini import generate_slides
+from .gemini import generate_deck
 from .transcript_format import format_snippets_for_llm
 
 app = FastAPI(title="Youtube Summaries Backend", version="0.1.0")
@@ -39,6 +41,71 @@ class TranscriptSnippet(BaseModel):
     start: float
     duration: float
 
+
+class TimelineBlockItem(BaseModel):
+    marker: str
+    text: str
+
+
+class BlockLink(BaseModel):
+    title: str
+    url: str
+    publisher: str | None = None
+
+
+class ClaimBlock(BaseModel):
+    type: Literal["claim"]
+    eyebrow: str | None = None
+    title: str
+    body: str
+    source_start: int | None = None
+    links: list[BlockLink] | None = None
+
+
+class ListBlock(BaseModel):
+    type: Literal["list"]
+    eyebrow: str | None = None
+    title: str
+    source_start: int | None = None
+    links: list[BlockLink] | None = None
+    items: list[str] = Field(..., min_length=2, max_length=5)
+
+
+class MetricBlock(BaseModel):
+    type: Literal["metric"]
+    eyebrow: str | None = None
+    value: str
+    label: str
+    body: str | None = None
+    source_start: int | None = None
+    links: list[BlockLink] | None = None
+
+
+class QuoteBlock(BaseModel):
+    type: Literal["quote"]
+    eyebrow: str | None = None
+    text: str
+    attribution: str
+    source_start: int | None = None
+    links: list[BlockLink] | None = None
+
+
+class TimelineBlock(BaseModel):
+    type: Literal["timeline"]
+    eyebrow: str | None = None
+    title: str
+    source_start: int | None = None
+    links: list[BlockLink] | None = None
+    items: list[TimelineBlockItem] = Field(..., min_length=3, max_length=6)
+
+
+DeckBlock = ClaimBlock | ListBlock | MetricBlock | QuoteBlock | TimelineBlock
+
+
+class Deck(BaseModel):
+    title: str
+    tldr: str
+    blocks: list[DeckBlock] = Field(..., min_length=1, max_length=7)
 
 class TranscriptResponse(BaseModel):
     video_id: str
@@ -113,13 +180,30 @@ class SlidesRequest(BaseModel):
         default=None,
         description="Preferred transcript language codes. Defaults to ['en'].",
     )
+    channel: str | None = Field(default=None, description="Channel name, or 'one-shot' if user import")
+    title: str | None = Field(default=None, description="Original video title (if known)")
 
 
 class SlidesResponse(BaseModel):
     video_id: str
-    slides_html: str
+    deck: Deck
+    duration_seconds: int
     transcript: list[TranscriptSnippet]
 
+
+def _fmt_duration(seconds: float) -> str:
+    s = int(seconds)
+    h, rem = divmod(s, 3600)
+    m, sec = divmod(rem, 60)
+    if h > 0:
+        return f"{h}:{m:02d}:{sec:02d}"
+    return f"{m}:{sec:02d}"
+
+
+def _duration_seconds(snippets) -> int:
+    if not snippets:
+        return 0
+    return math.ceil(max(s.start + s.duration for s in snippets))
 
 @app.post("/slides", response_model=SlidesResponse)
 def post_slides(req: SlidesRequest) -> SlidesResponse:
@@ -137,14 +221,21 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
         raise HTTPException(status_code=502, detail=f"Transcript fetch failed: {exc}") from exc
 
     transcript_text = format_snippets_for_llm(fetched.snippets)
+    duration_s = _duration_seconds(fetched.snippets)
     try:
-        slides_html = generate_slides(transcript_text)
+        deck = Deck.model_validate(generate_deck(
+            channel=req.channel or "one-shot",
+            title=req.title or f"YouTube {video_id}",
+            duration=_fmt_duration(duration_s),
+            transcript_text=transcript_text,
+        ))
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Slides generation failed: {exc}") from exc
+        raise HTTPException(status_code=502, detail=f"Deck generation failed: {exc}") from exc
 
     return SlidesResponse(
         video_id=fetched.video_id,
-        slides_html=slides_html,
+        deck=deck,
+        duration_seconds=duration_s,
         transcript=[
             TranscriptSnippet(text=s.text, start=s.start, duration=s.duration)
             for s in fetched.snippets

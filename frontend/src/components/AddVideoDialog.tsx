@@ -2,11 +2,19 @@ import { useEffect, useRef, useState } from 'react'
 import type { Video } from '../types'
 import { Icon } from './Icon'
 import { Btn } from './atoms'
+import { postSlides } from '../lib/api'
+import { createVideo } from '../lib/pb'
 
 type Props = {
   open: boolean
   onClose: () => void
   onAdd: (video: Video) => void
+}
+
+function normalizeYouTubeSource(input: string, id: string): string {
+  const trimmed = input.trim()
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return "https://www.youtube.com/watch?v=" + id
+  return trimmed
 }
 
 function parseYouTubeId(input: string): string | null {
@@ -32,6 +40,7 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -39,6 +48,7 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
       setUrl('')
       setTitle('')
       setError(null)
+      setBusy(false)
       setTimeout(() => inputRef.current?.focus(), 30)
     }
   }, [open])
@@ -54,33 +64,34 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
 
   if (!open) return null
 
-  const submit = () => {
+  const submit = async () => {
+    if (busy) return
     const id = parseYouTubeId(url)
     if (!id) {
       setError('Could not parse a YouTube video ID from that URL.')
       return
     }
-    const finalTitle = title.trim() || 'Untitled video'
-    const now = new Date().toISOString()
-    const video: Video = {
-      id: `u-${Date.now()}`,
-      channelId: null,
-      oneshot: true,
-      addedBy: 'user',
-      title: finalTitle,
-      duration: 0,
-      publishedAt: now,
-      addedAt: now,
-      youtubeId: id,
-      sourceUrl: url.trim(),
-      status: 'unread',
-      starred: false,
-      tags: [],
-      readingTime: 0,
-      summary: {},
+    setBusy(true)
+    setError(null)
+    try {
+      const sourceUrl = normalizeYouTubeSource(url, id)
+      const userTitle = title.trim()
+      const resp = await postSlides(sourceUrl, { title: userTitle || undefined })
+      const finalTitle = userTitle || resp.deck?.title || `YouTube ${id}`
+      const video = await createVideo({
+        url: sourceUrl,
+        video_id: resp.video_id,
+        title: finalTitle,
+        deck: resp.deck,
+        transcript: resp.transcript,
+      })
+      onAdd(video)
+      onClose()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to generate slides')
+    } finally {
+      setBusy(false)
     }
-    onAdd(video)
-    onClose()
   }
 
   return (
@@ -200,7 +211,9 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
           )}
 
           <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--muted)', letterSpacing: '.04em', lineHeight: 1.5 }}>
-            Frontend-only stub. Backend summary generation lands later — for now the new entry shows up in the list and the player loads the YouTube embed.
+            {busy
+              ? 'Fetching transcript and generating slides… can take 10–30s.'
+              : 'Submits URL to backend → transcript + Gemini slide deck → saved to Pocketbase.'}
           </div>
         </div>
 
@@ -218,7 +231,7 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
             Cancel
           </Btn>
           <Btn onClick={submit} kind="accent" icon="plus">
-            Add video
+            {busy ? 'Generating…' : 'Add video'}
           </Btn>
         </div>
       </div>

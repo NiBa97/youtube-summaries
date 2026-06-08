@@ -2,9 +2,10 @@ import type { Video } from '../types'
 
 type Props = {
   video: Video | null
+  start?: number | null
 }
 
-export function VideoPanel({ video }: Props) {
+export function VideoPanel({ video, start = null }: Props) {
   if (!video) {
     return (
       <div
@@ -77,8 +78,8 @@ export function VideoPanel({ video }: Props) {
           }}
         >
           <iframe
-            key={video.id}
-            src={`https://www.youtube.com/embed/${video.youtubeId}?rel=0&modestbranding=1`}
+            key={`${video.id}-${start ?? 'start'}`}
+            src={`https://www.youtube.com/embed/${video.youtubeId}?rel=0&modestbranding=1${start !== null ? `&start=${Math.floor(start)}&autoplay=1` : ''}`}
             title={video.title}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
