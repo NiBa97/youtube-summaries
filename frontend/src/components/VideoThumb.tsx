@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
 import type { Channel, Video } from '../types'
 
@@ -10,7 +10,26 @@ type Props = {
   rounded?: number
 }
 
+function youtubeThumbnailSources(videoId: string): string[] {
+  if (!videoId) return []
+  const encoded = encodeURIComponent(videoId)
+  return [
+    `https://i.ytimg.com/vi/${encoded}/maxresdefault.jpg`,
+    `https://i.ytimg.com/vi/${encoded}/sddefault.jpg`,
+    `https://i.ytimg.com/vi/${encoded}/hqdefault.jpg`,
+    `https://i.ytimg.com/vi/${encoded}/mqdefault.jpg`,
+  ]
+}
+
 export function VideoThumb({ video, channel, width = 96, height = 54, rounded = 6 }: Props) {
+  const [thumbIndex, setThumbIndex] = useState(0)
+  const thumbnailSources = useMemo(() => youtubeThumbnailSources(video.youtubeId), [video.youtubeId])
+  const thumbnailSrc = thumbnailSources[thumbIndex]
+
+  useEffect(() => {
+    setThumbIndex(0)
+  }, [video.youtubeId])
+
   const seed = useMemo(() => {
     let h = 0
     for (const c of video.id + video.title) h = (h * 31 + c.charCodeAt(0)) | 0
@@ -103,9 +122,20 @@ export function VideoThumb({ video, channel, width = 96, height = 54, rounded = 
         boxShadow: '0 0 0 1px rgba(0,0,0,.08) inset',
       }}
     >
-      <svg viewBox="0 0 100 56" preserveAspectRatio="none" width="100%" height="100%" style={{ display: 'block' }}>
-        {composition}
-      </svg>
+      {thumbnailSrc ? (
+        <img
+          src={thumbnailSrc}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setThumbIndex((idx) => idx + 1)}
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      ) : (
+        <svg viewBox="0 0 100 56" preserveAspectRatio="none" width="100%" height="100%" style={{ display: 'block' }}>
+          {composition}
+        </svg>
+      )}
       <div
         style={{
           position: 'absolute',
