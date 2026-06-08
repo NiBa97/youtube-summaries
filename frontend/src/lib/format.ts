@@ -1,8 +1,8 @@
-const NOW_REF = new Date('2026-05-02T10:00:00')
-
 export function fmtRelative(iso: string): string {
   const d = new Date(iso)
-  const diffMs = NOW_REF.getTime() - d.getTime()
+  if (Number.isNaN(d.getTime())) return ''
+
+  const diffMs = Date.now() - d.getTime()
   const h = Math.floor(diffMs / 3_600_000)
   if (h < 1) return 'just now'
   if (h < 24) return `${h}h ago`
