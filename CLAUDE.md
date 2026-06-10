@@ -81,7 +81,7 @@ Caddy strips the `/api` and `/pb` path prefixes (`handle_path`) before forwardin
 
 ### Deployment
 
-Coolify deploys via `docker-compose.preview.yaml` (overrides `Caddyfile.preview` which honors `$APP_DOMAIN` for auto-HTTPS). Set `APP_DOMAIN` in env to enable.
+Coolify deploys via `docker-compose.coolify.yaml` (self-contained prod stack: nginx-served frontend build, real uvicorn, no host ports). Attach the domain to the `caddy` service (container port 80); Coolify's Traefik terminates TLS. Set `GEMINI_API_KEY` in Coolify env. Pocketbase data lives in the named volume `pb_data` (survives redeploys — the bind-mounted `./database/pb_data` in the local compose files would not). First-run admin bootstrap is manual (see compose file header). Do **not** deploy `docker-compose.preview.yaml` to Coolify — it runs the Vite dev server, which rejects unknown `Host` headers.
 
 ## Worktree workflow
 

@@ -1,0 +1,95 @@
+# Coolify production stack (self-contained, no override files).
+#
+# Coolify setup:
+#   - Build pack: Docker Compose, compose location: /docker-compose.coolify.yaml
+#   - Attach your domain to the `caddy` service (container port 80).
+#     Coolify's proxy (Traefik) terminates TLS and routes over the docker
+#     network — no host ports are published here.
+#   - Required env: GEMINI_API_KEY
+#
+# Pocketbase data lives in the named volume `pb_data` so it survives
+# redeploys (the repo checkout is replaced on every deploy). Migrations
+# auto-apply from the repo on start.
+#
+# First-run admin bootstrap (one-off, via Coolify terminal on the
+# pocketbase container):
+#   /usr/local/bin/pocketbase --dir=/pb/pb_data admin create <email> <password>
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    expose:
+      - "80"
+    environment:
+      - SERVICE_NAME_BACKEND=backend
+      - SERVICE_NAME_POCKETBASE=pocketbase
+      - SERVICE_NAME_FRONTEND=frontend
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - frontend
+      - backend
+      - pocketbase
+
+  pocketbase:
+    image: ghcr.io/muchobien/pocketbase:0.22.21
+    restart: unless-stopped
+    command:
+      - --dir=/pb/pb_data
+      - --migrationsDir=/pb/pb_migrations
+      - --hooksDir=/pb/pb_hooks
+      - --http=0.0.0.0:8090
+    expose:
+      - "8090"
+    volumes:
+      - pb_data:/pb/pb_data
+      - ./database/pb_migrations:/pb/pb_migrations
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8090/api/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    command:
+      - uvicorn
+      - app.main:app
+      - --host=0.0.0.0
+      - --port=8000
+      - --root-path=/api
+      - --proxy-headers
+      - --forwarded-allow-ips=*
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    expose:
+      - "8000"
+    depends_on:
+      pocketbase:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-/api}
+        VITE_PB_URL: ${VITE_PB_URL:-/pb}
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - backend
+      - pocketbase
+
+volumes:
+  pb_data:
