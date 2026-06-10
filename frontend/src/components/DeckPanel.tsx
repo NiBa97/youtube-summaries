@@ -71,23 +71,11 @@ function numberedPoints(transcript: TranscriptSnippet[]): DetailPoint[] {
   })
 }
 
-function nearbyTranscriptDetails(transcript: TranscriptSnippet[], start: number | null | undefined): DetailPoint[] {
-  if (typeof start !== 'number') return []
-  return transcript
-    .filter((snippet) => snippet.start >= start - 4 && snippet.start <= start + 55)
-    .slice(0, 8)
-    .map((snippet) => ({ start: snippet.start, title: snippet.text, text: snippet.text }))
-}
-
-function detailsForBlock(block: DeckBlock, index: number, blocks: DeckBlock[], transcript: TranscriptSnippet[]): DetailPoint[] {
-  const numbered = numberedPoints(transcript)
-  if (numbered.length >= 8) {
-    const blockStart = typeof block.source_start === 'number' ? block.source_start : 0
-    const nextStart = blocks.slice(index + 1).find((candidate) => typeof candidate.source_start === 'number')?.source_start
-    const related = numbered.filter((point) => point.start >= blockStart && (typeof nextStart !== 'number' || point.start < nextStart))
-    if (related.length) return related
-  }
-  return nearbyTranscriptDetails(transcript, block.source_start)
+function detailsForBlock(block: DeckBlock, index: number, blocks: DeckBlock[], numbered: DetailPoint[]): DetailPoint[] {
+  if (numbered.length < 8) return []
+  const blockStart = typeof block.source_start === 'number' ? block.source_start : 0
+  const nextStart = blocks.slice(index + 1).find((candidate) => typeof candidate.source_start === 'number')?.source_start
+  return numbered.filter((point) => point.start >= blockStart && (typeof nextStart !== 'number' || point.start < nextStart))
 }
 
 type Props = {
@@ -163,6 +151,7 @@ export function DeckPanel({ video, channel, onJump }: Props) {
   if (blocks.length === 0) {
     return <EmptyDeck />
   }
+  const numbered = numberedPoints(transcript)
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg)', minHeight: 0 }}>
@@ -204,7 +193,7 @@ export function DeckPanel({ video, channel, onJump }: Props) {
               <div style={{ minWidth: 0 }}>
                 <h3 style={sectionTitleStyle}>{blockTitle(block)}</h3>
                 <p style={bodyStyle}>{blockText(block)}</p>
-                <DetailLayer details={detailsForBlock(block, i, blocks, transcript)} onJump={onJump} />
+                <DetailLayer details={detailsForBlock(block, i, blocks, numbered)} onJump={onJump} />
                 {block.links?.length ? <SourceLinks links={block.links} /> : null}
               </div>
             </section>
