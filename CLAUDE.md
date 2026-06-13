@@ -81,7 +81,7 @@ Caddy strips the `/api` and `/pb` path prefixes (`handle_path`) before forwardin
 
 ### Deployment
 
-Coolify deploys via `docker-compose.coolify.yaml` (self-contained prod stack: nginx-served frontend build, real uvicorn, no host ports). Attach the domain to the `caddy` service (container port 80); Coolify's Traefik terminates TLS. Set `GEMINI_API_KEY` in Coolify env. Pocketbase data lives in the named volume `pb_data` (survives redeploys — the bind-mounted `./database/pb_data` in the local compose files would not). First-run admin bootstrap is manual (see compose file header). Do **not** deploy `docker-compose.preview.yaml` to Coolify — it runs the Vite dev server, which rejects unknown `Host` headers.
+Coolify deploys via `docker-compose.coolify.yaml` (self-contained prod stack: nginx-served frontend build, real uvicorn, no host ports). Attach the domain to the `caddy` service (container port 80); Coolify's Traefik terminates TLS. Set `GEMINI_API_KEY` in Coolify env. Pocketbase production data is a host bind mount at the absolute path `/root/yts_pb_data_prod` — the single source of truth, surviving container crashes, redeploys, and node reboots. A named volume would get rewritten to a UUID-prefixed name by Coolify (coollabsio/coolify#3954), and the bind-mounted `./database/pb_data` in the local compose files survives nothing on redeploy. First-run admin bootstrap is manual (see compose file header). Do **not** deploy `docker-compose.preview.yaml` to Coolify — it runs the Vite dev server, which rejects unknown `Host` headers.
 
 ## Worktree workflow
 

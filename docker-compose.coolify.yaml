@@ -7,9 +7,13 @@
 #     network — no host ports are published here.
 #   - Required env: GEMINI_API_KEY
 #
-# Pocketbase data lives in the named volume `pb_data` so it survives
-# redeploys (the repo checkout is replaced on every deploy). Migrations
-# auto-apply from the repo on start.
+# Pocketbase production data is the single source of truth at the host
+# absolute path /root/yts_pb_data_prod, bind-mounted into the container so it
+# survives container crashes, redeploys, and node reboots. The repo checkout
+# is replaced on every deploy, and a Coolify named volume gets rewritten to a
+# UUID-prefixed name (coollabsio/coolify#3954) — neither is a stable home for
+# the data. An absolute path is the only source Coolify's validator leaves
+# untouched. Migrations auto-apply from the repo on start.
 #
 # First-run admin bootstrap (one-off, via Coolify terminal on the
 # pocketbase container):
@@ -43,7 +47,7 @@ services:
     expose:
       - "8090"
     volumes:
-      - pb_data:/pb/pb_data
+      - '/root/yts_pb_data_prod:/pb/pb_data:rw'
       - ./database/pb_migrations:/pb/pb_migrations
     healthcheck:
       test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8090/api/health" ]
@@ -90,6 +94,3 @@ services:
     depends_on:
       - backend
       - pocketbase
-
-volumes:
-  pb_data:
