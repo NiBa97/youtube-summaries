@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { Channel, Filters, Video } from '../types'
 import { Icon } from './Icon'
-import { ChannelDot, Btn } from './atoms'
+import { ChannelDot } from './atoms'
 
 type Props = {
   channels: Channel[]
@@ -77,7 +77,37 @@ export function FilterRail({ channels, videos, filters, setFilters, onAddVideo }
         </div>
       </div>
 
-      <div style={{ padding: '14px 14px 8px' }}>
+      <div style={{ padding: '14px 14px 4px' }}>
+        <button
+          onClick={onAddVideo}
+          style={{
+            appearance: 'none',
+            border: 0,
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 7,
+            padding: '10px 12px',
+            borderRadius: 8,
+            background: 'var(--accent)',
+            color: '#fff',
+            font: 'inherit',
+            fontFamily: 'var(--sans)',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'filter .12s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.filter = 'brightness(1.08)')}
+          onMouseLeave={(e) => (e.currentTarget.style.filter = 'none')}
+        >
+          <Icon name="plus" size={14} />
+          Add video
+        </button>
+      </div>
+
+      <div style={{ padding: '10px 14px 8px' }}>
         <div
           style={{
             display: 'flex',
@@ -174,10 +204,17 @@ export function FilterRail({ channels, videos, filters, setFilters, onAddVideo }
         })}
       </div>
 
-      <div style={{ padding: 12, borderTop: '1px solid var(--rule)' }}>
-        <Btn icon="plus" onClick={onAddVideo} kind="outline">
-          Add video
-        </Btn>
+      <div
+        style={{
+          padding: '10px 18px',
+          borderTop: '1px solid var(--rule)',
+          fontFamily: 'var(--mono)',
+          fontSize: 10.5,
+          color: 'var(--muted)',
+          letterSpacing: '.04em',
+        }}
+      >
+        {import.meta.env.VITE_GIT_SHA}
       </div>
     </div>
   )

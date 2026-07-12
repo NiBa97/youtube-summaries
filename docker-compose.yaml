@@ -78,6 +78,7 @@ services:
       args:
         VITE_BACKEND_URL: ${VITE_BACKEND_URL:-/api}
         VITE_PB_URL: ${VITE_PB_URL:-/pb}
+        VITE_GIT_SHA: ${VITE_GIT_SHA:-}
     container_name: yts-frontend
     restart: unless-stopped
     expose:
