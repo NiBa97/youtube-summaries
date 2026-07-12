@@ -74,11 +74,13 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      # Context is the repo root (not ./frontend) so the Dockerfile can COPY
+      # .git in and resolve VITE_GIT_SHA at build time.
+      context: .
+      dockerfile: frontend/Dockerfile
       args:
         VITE_BACKEND_URL: ${VITE_BACKEND_URL:-/api}
         VITE_PB_URL: ${VITE_PB_URL:-/pb}
-        VITE_GIT_SHA: ${VITE_GIT_SHA:-}
     container_name: yts-frontend
     restart: unless-stopped
     expose:
