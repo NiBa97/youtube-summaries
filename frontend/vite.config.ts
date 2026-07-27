@@ -2,7 +2,11 @@ import { execSync } from 'node:child_process'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-if (!process.env.VITE_GIT_SHA) {
+// Container builds get VITE_GIT_SHA passed in (Coolify's SOURCE_COMMIT is a
+// full 40-char sha, so shorten it); local builds fall back to reading git.
+if (process.env.VITE_GIT_SHA) {
+  process.env.VITE_GIT_SHA = process.env.VITE_GIT_SHA.trim().slice(0, 7)
+} else {
   try {
     process.env.VITE_GIT_SHA = execSync('git rev-parse --short HEAD', { cwd: __dirname }).toString().trim()
   } catch {

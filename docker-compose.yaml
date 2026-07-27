@@ -74,13 +74,14 @@ services:
 
   frontend:
     build:
-      # Context is the repo root (not ./frontend) so the Dockerfile can COPY
-      # .git in and resolve VITE_GIT_SHA at build time.
-      context: .
-      dockerfile: frontend/Dockerfile
+      context: ./frontend
       args:
         VITE_BACKEND_URL: ${VITE_BACKEND_URL:-/api}
         VITE_PB_URL: ${VITE_PB_URL:-/pb}
+        # Footer build version. Set VITE_GIT_SHA in .env (or inline:
+        # `VITE_GIT_SHA=$(git rev-parse --short HEAD) docker compose build`)
+        # to stamp a local build.
+        VITE_GIT_SHA: ${VITE_GIT_SHA:-local}
     container_name: yts-frontend
     restart: unless-stopped
     expose:
