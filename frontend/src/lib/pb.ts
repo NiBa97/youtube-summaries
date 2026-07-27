@@ -48,6 +48,7 @@ export type VideoRecord = RecordModel & {
   status: 'pending' | 'transcribed' | 'slides_ready' | 'error'
   deck?: Deck | null
   transcript?: unknown
+  instructions?: string
   error?: string
 }
 
@@ -87,8 +88,9 @@ export async function createVideo(input: {
   title: string
   deck: Deck
   transcript: unknown
+  instructions?: string
 }): Promise<Video> {
-  const payload = { ...input, status: 'slides_ready' as const }
+  const payload = { ...input, instructions: input.instructions ?? '', status: 'slides_ready' as const }
   let existing: VideoRecord | null = null
   try {
     existing = await pb

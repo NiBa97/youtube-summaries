@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import math
 import re
-from typing import Literal
+from typing import Any, Literal
 from urllib.parse import parse_qs, urlparse
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import (
     NoTranscriptFound,
@@ -16,6 +16,7 @@ from youtube_transcript_api._errors import (
 )
 
 from .gemini import generate_deck
+from .link_preview import LinkPreviewError, fetch_preview
 from .transcript_format import format_snippets_for_llm
 
 app = FastAPI(title="Youtube Summaries Backend", version="0.1.0")
@@ -107,6 +108,55 @@ class Deck(BaseModel):
     tldr: str
     blocks: list[DeckBlock] = Field(..., min_length=1, max_length=7)
 
+_BLOCK_VARIANT_BY_TYPE = {
+    "claim": "ClaimBlock",
+    "list": "ListBlock",
+    "metric": "MetricBlock",
+    "quote": "QuoteBlock",
+    "timeline": "TimelineBlock",
+}
+_MAX_REPORTED_ERRORS = 8
+
+
+def _deck_validation_error(payload: dict[str, Any]) -> str | None:
+    """Validate a raw deck dict, returning a compact error report or None.
+
+    Pydantic reports a failing block against every union member, so a single
+    mistake yields ~15 errors. Keep only the ones for the variant the block
+    actually declared.
+    """
+    try:
+        Deck.model_validate(payload)
+    except ValidationError as exc:
+        blocks = payload.get("blocks")
+        lines: list[str] = []
+        for err in exc.errors():
+            loc = err["loc"]
+            if (
+                len(loc) >= 3
+                and loc[0] == "blocks"
+                and isinstance(loc[1], int)
+                and isinstance(loc[2], str)
+                and loc[2].endswith("Block")
+                and isinstance(blocks, list)
+                and 0 <= loc[1] < len(blocks)
+                and isinstance(blocks[loc[1]], dict)
+            ):
+                expected = _BLOCK_VARIANT_BY_TYPE.get(blocks[loc[1]].get("type"))
+                if expected is not None and loc[2] != expected:
+                    continue
+            line = f"{'.'.join(str(part) for part in loc)}: {err['msg']}"
+            if line not in lines:
+                lines.append(line)
+        if not lines:
+            lines = [str(exc)]
+        report = "\n".join(lines[:_MAX_REPORTED_ERRORS])
+        if len(lines) > _MAX_REPORTED_ERRORS:
+            report += f"\n(+{len(lines) - _MAX_REPORTED_ERRORS} more)"
+        return report
+    return None
+
+
 class TranscriptResponse(BaseModel):
     video_id: str
     language: str
@@ -147,6 +197,29 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+class LinkPreviewResponse(BaseModel):
+    url: str
+    site: str
+    title: str | None = None
+    description: str | None = None
+    image: str | None = None
+
+
+@app.get("/link-preview", response_model=LinkPreviewResponse)
+def link_preview(url: str) -> LinkPreviewResponse:
+    try:
+        preview = fetch_preview(url)
+    except LinkPreviewError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return LinkPreviewResponse(
+        url=preview.url,
+        site=preview.site,
+        title=preview.title,
+        description=preview.description,
+        image=preview.image,
+    )
+
+
 @app.post("/transcript", response_model=TranscriptResponse)
 def get_transcript(req: TranscriptRequest) -> TranscriptResponse:
     video_id = extract_video_id(req.url)
@@ -182,6 +255,11 @@ class SlidesRequest(BaseModel):
     )
     channel: str | None = Field(default=None, description="Channel name, or 'one-shot' if user import")
     title: str | None = Field(default=None, description="Original video title (if known)")
+    instructions: str | None = Field(
+        default=None,
+        max_length=1000,
+        description="Short custom directive appended to the deck prompt, e.g. 'name every card mentioned'",
+    )
 
 
 class SlidesResponse(BaseModel):
@@ -223,12 +301,18 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
     transcript_text = format_snippets_for_llm(fetched.snippets)
     duration_s = _duration_seconds(fetched.snippets)
     try:
-        deck = Deck.model_validate(generate_deck(
+        raw_deck = generate_deck(
             channel=req.channel or "one-shot",
             title=req.title or f"YouTube {video_id}",
             duration=_fmt_duration(duration_s),
             transcript_text=transcript_text,
-        ))
+            instructions=req.instructions,
+            validate=_deck_validation_error,
+        )
+        deck = Deck.model_validate(raw_deck)
+    except ValidationError as exc:
+        detail = _deck_validation_error(raw_deck) or str(exc)
+        raise HTTPException(status_code=502, detail=f"Deck generation failed: {detail}") from exc
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Deck generation failed: {exc}") from exc
 

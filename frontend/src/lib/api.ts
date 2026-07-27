@@ -11,9 +11,34 @@ export type SlidesResponse = {
   transcript: TranscriptSnippet[]
 }
 
+export type LinkPreview = {
+  url: string
+  site: string
+  title?: string | null
+  description?: string | null
+  image?: string | null
+}
+
+const previewCache = new Map<string, Promise<LinkPreview>>()
+
+/** Unfurl a URL through the backend. Results are cached per session. */
+export function getLinkPreview(url: string): Promise<LinkPreview> {
+  const cached = previewCache.get(url)
+  if (cached) return cached
+
+  const pending = (async () => {
+    const res = await fetch(`${BACKEND_URL}/link-preview?url=${encodeURIComponent(url)}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return res.json() as Promise<LinkPreview>
+  })()
+  previewCache.set(url, pending)
+  pending.catch(() => previewCache.delete(url))
+  return pending
+}
+
 export async function postSlides(
   url: string,
-  opts: { languages?: string[]; channel?: string; title?: string } = {},
+  opts: { languages?: string[]; channel?: string; title?: string; instructions?: string } = {},
 ): Promise<SlidesResponse> {
   const res = await fetch(`${BACKEND_URL}/slides`, {
     method: 'POST',
