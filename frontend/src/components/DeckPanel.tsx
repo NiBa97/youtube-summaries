@@ -1,4 +1,6 @@
 import type { Channel, DeckBlock, TranscriptSnippet, Video } from '../types'
+import { RichText, SmartLink } from './RichText'
+import { faviconUrl, hostLabel, stripRichText } from '../lib/richtext'
 
 type DetailPoint = {
   n?: number
@@ -129,18 +131,6 @@ function fmtTimestamp(seconds: number | null | undefined): string {
   return `${m}:${String(sec).padStart(2, '0')}`
 }
 
-function faviconUrl(url: string): string {
-  return `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(url)}&sz=32`
-}
-
-function hostLabel(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '')
-  } catch {
-    return url
-  }
-}
-
 export function DeckPanel({ video, channel, onJump }: Props) {
   if (!video) {
     return <EmptyDeck />
@@ -191,8 +181,8 @@ export function DeckPanel({ video, channel, onJump }: Props) {
               </div>
 
               <div style={{ minWidth: 0 }}>
-                <h3 style={sectionTitleStyle}>{blockTitle(block)}</h3>
-                <p style={bodyStyle}>{blockText(block)}</p>
+                <h3 style={sectionTitleStyle}>{stripRichText(blockTitle(block))}</h3>
+                <p style={bodyStyle}><RichText text={blockText(block)} /></p>
                 <DetailLayer details={detailsForBlock(block, i, blocks, numbered)} onJump={onJump} />
                 {block.links?.length ? <SourceLinks links={block.links} /> : null}
               </div>
@@ -243,11 +233,11 @@ function SourceLinks({ links }: { links: NonNullable<DeckBlock['links']> }) {
       <div style={{ ...monoMutedStyle, fontSize: 10 }}>READ MORE</div>
       <div style={{ display: 'grid', gap: 7, marginTop: 8 }}>
         {links.map((link, i) => (
-          <a key={`${link.url}-${i}`} href={link.url} target="_blank" rel="noreferrer" style={sourceLinkStyle}>
+          <SmartLink key={`${link.url}-${i}`} url={link.url} style={sourceLinkStyle}>
             <img src={faviconUrl(link.url)} alt="" width={16} height={16} style={{ borderRadius: 3, flexShrink: 0 }} />
             <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{link.title}</span>
             <span style={{ color: 'var(--muted)', flexShrink: 0 }}>{link.publisher || hostLabel(link.url)}</span>
-          </a>
+          </SmartLink>
         ))}
       </div>
     </div>
@@ -367,6 +357,7 @@ const sourceLinkStyle: React.CSSProperties = {
   gap: 8,
   color: 'var(--ink)',
   textDecoration: 'none',
+  borderBottom: 0,
   fontFamily: 'var(--mono)',
   fontSize: 11,
   lineHeight: 1.2,

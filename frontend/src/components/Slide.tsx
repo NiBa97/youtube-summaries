@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactElement } from 'react'
 import type { Channel, DeckBlock, RenderedSlide, Slide as SlideType, Video } from '../types'
+import { stripRichText } from '../lib/richtext'
 
 const PALETTE = {
   bg: '#f4ede0',
@@ -155,20 +156,20 @@ export function Slide({ slide, channel, scale = 1 }: Props) {
     const block = slide.block
     if (block.type === 'claim') {
       body = (
-        <BlockFrame eyebrow={block.eyebrow} title={block.title}>
-          <div style={{ fontSize: 29, lineHeight: 1.38, color: p.ink, maxWidth: 940, textWrap: 'pretty' }}>{block.body}</div>
+        <BlockFrame eyebrow={block.eyebrow} title={stripRichText(block.title)}>
+          <div style={{ fontSize: 29, lineHeight: 1.38, color: p.ink, maxWidth: 940, textWrap: 'pretty' }}>{stripRichText(block.body)}</div>
         </BlockFrame>
       )
     } else if (block.type === 'list') {
       body = (
-        <BlockFrame eyebrow={block.eyebrow || 'Key points'} title={block.title}>
+        <BlockFrame eyebrow={block.eyebrow || 'Key points'} title={stripRichText(block.title)}>
           <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 22, maxWidth: 980 }}>
             {block.items.map((it, i) => (
               <li key={i} style={{ display: 'grid', gridTemplateColumns: '58px 1fr', gap: 24, alignItems: 'baseline' }}>
                 <span style={{ fontFamily: '"JetBrains Mono", ui-monospace, monospace', fontSize: 14, color: p.muted, fontVariantNumeric: 'tabular-nums' }}>
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <span style={{ fontSize: 25, lineHeight: 1.38, textWrap: 'pretty' }}>{it}</span>
+                <span style={{ fontSize: 25, lineHeight: 1.38, textWrap: 'pretty' }}>{stripRichText(it)}</span>
               </li>
             ))}
           </ol>
@@ -179,8 +180,8 @@ export function Slide({ slide, channel, scale = 1 }: Props) {
         <BlockFrame eyebrow={block.eyebrow || 'By the numbers'}>
           <div>
             <div style={{ fontSize: 180, lineHeight: .9, fontWeight: 500, letterSpacing: '-.04em' }}>{block.value}</div>
-            <div style={{ marginTop: 28, fontSize: 34, lineHeight: 1.18, maxWidth: 760 }}>{block.label}</div>
-            {block.body && <div style={{ marginTop: 24, fontSize: 23, lineHeight: 1.42, color: p.muted, maxWidth: 820 }}>{block.body}</div>}
+            <div style={{ marginTop: 28, fontSize: 34, lineHeight: 1.18, maxWidth: 760 }}>{stripRichText(block.label)}</div>
+            {block.body && <div style={{ marginTop: 24, fontSize: 23, lineHeight: 1.42, color: p.muted, maxWidth: 820 }}>{stripRichText(block.body)}</div>}
           </div>
         </BlockFrame>
       )
@@ -189,7 +190,7 @@ export function Slide({ slide, channel, scale = 1 }: Props) {
         <BlockFrame eyebrow={block.eyebrow || 'Quote'}>
           <div>
             <div style={{ fontSize: 54, lineHeight: 1.22, fontStyle: 'italic', letterSpacing: '-.01em', maxWidth: 1000, textWrap: 'balance' }}>
-              "{block.text}"
+              "{stripRichText(block.text)}"
             </div>
             <div style={{ marginTop: 34, fontFamily: '"JetBrains Mono", ui-monospace, monospace', fontSize: 14, color: p.muted, letterSpacing: '.06em' }}>
               - {block.attribution}
@@ -199,12 +200,12 @@ export function Slide({ slide, channel, scale = 1 }: Props) {
       )
     } else if (block.type === 'timeline') {
       body = (
-        <BlockFrame eyebrow={block.eyebrow || 'Timeline'} title={block.title}>
+        <BlockFrame eyebrow={block.eyebrow || 'Timeline'} title={stripRichText(block.title)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 19, maxWidth: 980 }}>
             {block.items.map((it, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: 26, paddingTop: i === 0 ? 0 : 19, borderTop: i === 0 ? 'none' : `1px solid ${p.rule}` }}>
                 <div style={{ fontFamily: '"JetBrains Mono", ui-monospace, monospace', fontSize: 16, color: p.accent, fontVariantNumeric: 'tabular-nums' }}>{it.marker}</div>
-                <div style={{ fontSize: 24, lineHeight: 1.32 }}>{it.text}</div>
+                <div style={{ fontSize: 24, lineHeight: 1.32 }}>{stripRichText(it.text)}</div>
               </div>
             ))}
           </div>

@@ -39,6 +39,7 @@ function parseYouTubeId(input: string): string | null {
 export function AddVideoDialog({ open, onClose, onAdd }: Props) {
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
+  const [instructions, setInstructions] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -47,6 +48,7 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
     if (open) {
       setUrl('')
       setTitle('')
+      setInstructions('')
       setError(null)
       setBusy(false)
       setTimeout(() => inputRef.current?.focus(), 30)
@@ -76,7 +78,11 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
     try {
       const sourceUrl = normalizeYouTubeSource(url, id)
       const userTitle = title.trim()
-      const resp = await postSlides(sourceUrl, { title: userTitle || undefined })
+      const userInstructions = instructions.trim()
+      const resp = await postSlides(sourceUrl, {
+        title: userTitle || undefined,
+        instructions: userInstructions || undefined,
+      })
       const finalTitle = userTitle || resp.deck?.title || `YouTube ${id}`
       const video = await createVideo({
         url: sourceUrl,
@@ -84,6 +90,7 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
         title: finalTitle,
         deck: resp.deck,
         transcript: resp.transcript,
+        instructions: userInstructions,
       })
       onAdd(video)
       onClose()
@@ -193,6 +200,22 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
               placeholder="Leave blank to fill in later"
               style={inputStyle}
             />
+          </Field>
+          <Field label="CUSTOM INSTRUCTION (OPTIONAL)">
+            <textarea
+              value={instructions}
+              maxLength={1000}
+              rows={3}
+              onChange={(e) => setInstructions(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit()
+              }}
+              placeholder="e.g. Name every Magic: The Gathering card mentioned"
+              style={{ ...inputStyle, resize: 'vertical', minHeight: 62, lineHeight: 1.45 }}
+            />
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '.04em' }}>
+              Steers what the summary covers. {instructions.length}/1000
+            </span>
           </Field>
 
           {error && (

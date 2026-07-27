@@ -64,6 +64,39 @@ def test_slides_endpoint_happy(mock_api_cls, mock_gen):
     assert "[2] second line" in transcript_text
 
 
+@patch("app.main.generate_deck")
+@patch("app.main.YouTubeTranscriptApi")
+def test_slides_endpoint_passes_custom_instructions(mock_api_cls, mock_gen):
+    mock_api_cls.return_value.fetch.return_value = _fake_fetched()
+    mock_gen.return_value = {
+        "title": "Title",
+        "tldr": "Short summary",
+        "blocks": [{"type": "claim", "title": "t", "body": "b"}],
+    }
+
+    r = client.post(
+        "/slides",
+        json={"url": "dQw4w9WgXcQ", "instructions": "Name every card mentioned"},
+    )
+    assert r.status_code == 200, r.text
+    assert mock_gen.call_args.kwargs["instructions"] == "Name every card mentioned"
+
+
+@patch("app.main.generate_deck")
+@patch("app.main.YouTubeTranscriptApi")
+def test_slides_endpoint_instructions_default_none(mock_api_cls, mock_gen):
+    mock_api_cls.return_value.fetch.return_value = _fake_fetched()
+    mock_gen.return_value = {
+        "title": "Title",
+        "tldr": "Short summary",
+        "blocks": [{"type": "claim", "title": "t", "body": "b"}],
+    }
+
+    r = client.post("/slides", json={"url": "dQw4w9WgXcQ"})
+    assert r.status_code == 200, r.text
+    assert mock_gen.call_args.kwargs["instructions"] is None
+
+
 def test_slides_endpoint_bad_url():
     r = client.post("/slides", json={"url": "not-a-url"})
     assert r.status_code == 400
