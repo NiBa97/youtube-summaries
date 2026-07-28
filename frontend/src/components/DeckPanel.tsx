@@ -1,4 +1,4 @@
-import type { Channel, DeckBlock, TranscriptSnippet, Video } from '../types'
+import type { DeckBlock, Tag, TranscriptSnippet, Video } from '../types'
 import { RichText, SmartLink } from './RichText'
 import { faviconUrl, hostLabel, stripRichText } from '../lib/richtext'
 
@@ -82,7 +82,7 @@ function detailsForBlock(block: DeckBlock, index: number, blocks: DeckBlock[], n
 
 type Props = {
   video: Video | null
-  channel: Channel | null
+  topic: Tag | null
   onJump?: (seconds: number) => void
 }
 
@@ -131,7 +131,7 @@ function fmtTimestamp(seconds: number | null | undefined): string {
   return `${m}:${String(sec).padStart(2, '0')}`
 }
 
-export function DeckPanel({ video, channel, onJump }: Props) {
+export function DeckPanel({ video, topic, onJump }: Props) {
   if (!video) {
     return <EmptyDeck />
   }
@@ -177,7 +177,7 @@ export function DeckPanel({ video, channel, onJump }: Props) {
                   )}
                 </div>
                 <div style={typeStyle}>{block.type}</div>
-                {channel && <div style={{ ...typeStyle, color: 'var(--muted)' }}>{channel.name}</div>}
+                {topic && <div style={{ ...typeStyle, color: 'var(--muted)' }}>{topic.name}</div>}
               </div>
 
               <div style={{ minWidth: 0 }}>

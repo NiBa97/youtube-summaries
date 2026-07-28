@@ -92,6 +92,378 @@ button {
   font-family: inherit;
 }
 
+/* ---------------------------------------------------------------------------
+   Filter rail.
+
+   Sidebar conventions people already have muscle memory for: tall pill rows, a
+   fixed leading column so every label starts on the same x-position, counts as
+   right-aligned mono numerals, and a SOLID accent fill for the selected row
+   rather than a faint tint. Written as classes rather than inline styles
+   because the hover and focus states need real CSS.
+   --------------------------------------------------------------------------- */
+
+.fr {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  border-right: 1px solid var(--rule);
+}
+
+.fr-header {
+  flex: 0 0 auto;
+  padding: 16px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.fr-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.fr-logo {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--bg);
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 700;
+}
+.fr-brand-name {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.fr-brand-sub {
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+}
+
+.fr-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.fr-search > svg {
+  position: absolute;
+  left: 12px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.fr-search input {
+  width: 100%;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0 12px 0 36px;
+  font-family: var(--sans);
+  font-size: 14px;
+  outline: none;
+}
+.fr-search input:focus {
+  border-color: var(--accent);
+}
+
+/* Lenses wrap rather than squeeze: the rail is user-resizable down to 200px. */
+.fr-lenses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fr-lens {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fr-lens:hover {
+  background: var(--surface-hover);
+}
+.fr-lens .fr-n {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.fr-lens.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.fr-lens.on .fr-n {
+  color: var(--bg);
+  opacity: 0.75;
+}
+
+.fr-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 10px 10px 4px;
+}
+.fr-section + .fr-section {
+  margin-top: 18px;
+}
+.fr-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 6px 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.fr-empty {
+  padding: 0 6px 6px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.fr-toggle {
+  display: flex;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.fr-toggle button {
+  border: 0;
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.fr-toggle button + button {
+  border-left: 1px solid var(--rule);
+}
+.fr-toggle button:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+.fr-toggle button.on {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.fr-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fr-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 39px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  border-radius: 10px;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.fr-row:hover {
+  background: var(--surface-hover);
+}
+.fr-row .fr-lead {
+  flex: 0 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fr-row .fr-label {
+  flex: 1 1 auto;
+  margin-left: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fr-row .fr-n {
+  flex: 0 0 auto;
+  margin-left: 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.fr-row.on {
+  background: var(--accent);
+  color: var(--bg);
+}
+.fr-row.on .fr-n {
+  color: var(--bg);
+  opacity: 0.75;
+}
+.fr-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: block;
+}
+.fr-row.on .fr-dot {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bg) 55%, transparent);
+}
+
+/* Unfiled is the one row that is always coloured, so the eye lands on the work
+   waiting to be done without it reading as an error. */
+.fr-unfiled {
+  margin-top: 6px;
+  height: 42px;
+  font-weight: 600;
+  border: 1px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+}
+.fr-unfiled:hover {
+  background: color-mix(in srgb, var(--accent) 24%, var(--surface));
+  border-style: solid;
+}
+.fr-unfiled .fr-lead {
+  color: var(--accent);
+}
+.fr-unfiled.on {
+  border-color: var(--accent);
+  border-style: solid;
+}
+.fr-unfiled.on .fr-lead {
+  color: var(--bg);
+}
+.fr-badge {
+  flex: 0 0 auto;
+  margin-left: 8px;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+.fr-unfiled.on .fr-badge {
+  background: var(--bg);
+  color: var(--accent);
+}
+
+.fr-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 0 6px;
+}
+.fr-chip {
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.fr-chip:hover {
+  background: var(--surface-hover);
+  border-color: var(--rule-strong);
+}
+.fr-chip .fr-n {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.fr-chip.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.fr-chip.on .fr-n {
+  color: var(--bg);
+  opacity: 0.75;
+}
+
+.fr-footer {
+  flex: 0 0 auto;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fr-btn {
+  height: 40px;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink);
+}
+.fr-btn:hover {
+  background: var(--surface-hover);
+}
+.fr-btn.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+}
+.fr-btn.primary:hover {
+  filter: brightness(1.08);
+  background: var(--accent);
+}
+
 .rs-sep {
   background: transparent;
   position: relative;
@@ -125,4 +497,13 @@ button {
 .rs-sep[data-active]::after,
 .rs-sep[data-state="resizing"]::after {
   background: var(--accent);
+}
+
+.fr-sha {
+  padding-top: 2px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
 }

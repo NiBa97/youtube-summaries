@@ -59,7 +59,8 @@ npm run lint     # eslint .
 ### Data flow (v0 — synchronous, no jobs)
 
 1. Frontend calls `POST /api/transcript` with `{ url, languages? }` to fetch transcript snippets, or `POST /api/slides` with `{ url, languages? }` to fetch transcript **and** generate slides in one call. Backend extracts the 11-char video id (handles `youtube.com/watch`, `youtu.be`, `/embed/`, `/shorts/`, `/v/`, or bare id).
-2. `/api/slides` returns `{ video_id, slides_html, transcript }`. Gemini is called server-side; the API key (`GEMINI_API_KEY`) lives in the backend's `.env` and never reaches the browser. See `docs/adr/0002-gemini-call-via-backend.md`.
+2. `/api/slides` returns `{ video_id, deck, duration_seconds, transcript, classification }`. Gemini is called server-side; the API key (`GEMINI_API_KEY`) lives in the backend's `.env` and never reaches the browser. See `docs/adr/0002-gemini-call-via-backend.md`.
+   If the request carries a `vocabulary` (`{ topics: string[], tags: [{name, count}] }`) the backend makes a second Gemini call to file the video — see *Library management* below. `POST /api/classify` is the same step standalone, for re-tagging and for the backfill script.
 3. Frontend persists video metadata, the `transcript` JSON, and `slides_html` to Pocketbase from the browser. Transcripts are stored so the frontend can re-render slides offline without re-calling the backend; they can also be re-fetched on demand via `/api/transcript`.
 4. If latency forces it, switch to a status/polling model and have the backend write directly into Pocketbase.
 
@@ -69,11 +70,48 @@ Pocketbase rules on the `videos` collection are wide-open (`listRule`/`viewRule`
 
 ### Pocketbase schema changes
 
-All schema work goes through migration files in `database/pb_migrations/` (JS migrations, name format `<unix-ts>_<slug>.js`, both `up` and `down`). Do **not** rely on admin-UI changes for anything that needs to be reproducible — they get overwritten when `pb_data/` is reset. Existing collection: `videos` (id `videos00000videos`) with fields `url`, `video_id` (unique, 11 chars), `title`, `status` (`pending|transcribed|slides_ready|error`), `slides_html`, `transcript` (json), `error`.
+All schema work goes through migration files in `database/pb_migrations/` (JS migrations, name format `<unix-ts>_<slug>.js`, both `up` and `down`). Do **not** rely on admin-UI changes for anything that needs to be reproducible — they get overwritten when `pb_data/` is reset. Existing collections:
+- `videos` (id `videos00000videos`): `url`, `video_id` (unique, 11 chars), `title`, `status` (ingest state: `pending|transcribed|slides_ready|error`), `slides_html`, `transcript` (json), `deck` (json), `error`, `topic` (relation→tags, maxSelect 1), `tags` (relation→tags), `tag_source` (json), `read_status` (`unread|reading|read`), `starred` (bool).
+- `tags` (id `tags00000000tags`): `name`, `norm` (unique), `kind` (`topic|tag`), `color`, `sort`.
+
+Note `status` (ingest pipeline) and `read_status` (have you read it) are different fields.
 
 ### Frontend layout
 
-Single-page app, no router. `App.tsx` composes a 3-pane layout via `react-resizable-panels`: filter rail / video list / right pane (player + deck). State is local (`useState`); `src/data.ts` holds sample data — Pocketbase wiring is not yet in place.
+Single-page app, no router. `App.tsx` composes a 3-pane layout via `react-resizable-panels`: filter rail / video list / right pane (player + tag bar + deck). State is local (`useState`), loaded from Pocketbase on mount via `lib/pb.ts` and `lib/tags.ts`.
+
+### Library management
+
+Videos are organised on two tiers, both stored in the one `tags` collection and told apart by `kind`:
+
+- **Topics** (`kind: 'topic'`) — 5-9 shelves, at most one per video, always visible at the top of the rail. The classifier picks from them via a response-schema enum and can never invent one; you curate them in the tag manager.
+- **tags** (`kind: 'tag'`) — many per video, shown below the Topics and **scoped to the selected Topic**, so the tag list never becomes another long list.
+
+One collection means promoting a tag to a Topic is a `kind` flip, not a data move.
+
+`norm` (lowercased, whitespace/`-`/`_` stripped) is unique and is the identity key that stops `Machine Learning` / `machine-learning` / `machine_learning` from becoming three tags. It is computed in three places that must stay in sync: `normalize_tag()` in `backend/app/main.py`, `normalizeTag()` in `frontend/src/lib/tags.ts`, and `normalize_tag()` in `backend/scripts/pblib.py`.
+
+Auto-tagging rules, all deliberate:
+
+- The topic enum is enforced by the response schema, but free-form tags still leak out-of-vocabulary names, so `_reconcile()` matches every returned tag against the vocabulary by norm — a hit is canonicalised, a miss is demoted to a proposal.
+- Existing tags above `AUTO_APPLY_THRESHOLD` (0.75) are pre-selected; **proposed new tags are never pre-selected**, at any confidence. Applying a wrong existing tag is one click to undo; creating a redundant tag splits the vocabulary permanently.
+- Every attached tag is recorded in `tag_source` as `ai` or `human`, which is what makes a bad auto-tagging run revertible.
+- A failed classification never fails `/slides` — you keep the deck and tag by hand.
+
+Two one-off scripts, both propose-to-a-JSON-file first and only write on a second `--apply` run:
+
+```bash
+cd backend
+uv run python scripts/seed_vocabulary.py            # propose topics+tags from the existing library
+uv run python scripts/seed_vocabulary.py --apply    # after you edit vocabulary_proposal.json
+uv run python scripts/backfill_tags.py --limit 5    # classify unfiled videos
+uv run python scripts/backfill_tags.py --apply      # after you edit backfill_proposal.json
+uv run python scripts/backfill_tags.py --revert     # strip every ai-attached tag
+```
+
+They talk to Pocketbase over REST (`PB_URL`, default `http://localhost/pb`) with stdlib only.
+
+`docs/library-management-options.html` is the report the design came from, including the options that were rejected.
 
 ### Reverse-proxy contract
 

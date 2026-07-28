@@ -1,0 +1,2564 @@
+<!doctype html>
+<html lang="en" data-theme="paper">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reel Notes — filter rail variants</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --serif: "Source Serif 4", "Source Serif Pro", Georgia, serif;
+  --sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+[data-theme="paper"] {
+  --bg: #f4ede0; --surface: #faf6ec; --surface-2: #ebe2d0; --surface-hover: #efe6d4;
+  --ink: #2a2419; --muted: #7a6f5e; --rule: rgba(42,36,25,.1); --rule-strong: rgba(42,36,25,.2);
+  --accent: #a85a2a; --page: #e9e0cf;
+}
+[data-theme="dark"] {
+  --bg: #15171a; --surface: #1c1f23; --surface-2: #24282d; --surface-hover: #1e2126;
+  --ink: #e8e6e1; --muted: #8a8680; --rule: rgba(232,230,225,.08); --rule-strong: rgba(232,230,225,.18);
+  --accent: #d97757; --page: #0f1113;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--page); color: var(--ink);
+  -webkit-font-smoothing: antialiased; }
+
+.topbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: baseline; gap: 16px;
+  padding: 18px 24px 14px; background: var(--page); border-bottom: 1px solid var(--rule); }
+.topbar h1 { font-family: var(--serif); font-size: 21px; font-weight: 500; margin: 0; letter-spacing: -.01em; }
+.topbar p { margin: 0; font-size: 13.5px; color: var(--muted); max-width: 62ch; line-height: 1.5; }
+.spacer { flex: 1; }
+.toggle { appearance: none; font-family: var(--mono); font-size: 11px; letter-spacing: .08em;
+  padding: 7px 12px; border-radius: 7px; border: 1px solid var(--rule-strong); background: transparent;
+  color: var(--ink); cursor: pointer; white-space: nowrap; }
+.toggle:hover { background: var(--surface-2); }
+
+.deck { display: flex; gap: 18px; padding: 20px 24px 40px; overflow-x: auto; align-items: flex-start; }
+.card { flex: 0 0 auto; display: flex; flex-direction: column; }
+.card > header { padding: 0 2px 10px; max-width: 340px; }
+.card .num { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--accent); }
+.card h2 { font-family: var(--serif); font-size: 18px; font-weight: 500; margin: 3px 0 2px; letter-spacing: -.01em; }
+.card .sub { font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; color: var(--muted); }
+.card .why { margin: 8px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.frame { height: 780px; border: 1px solid var(--rule-strong); border-radius: 10px; overflow: hidden;
+  background: var(--bg); box-shadow: 0 12px 32px rgba(0,0,0,.10); }
+.frame > div { height: 100%; }
+.baseline .frame { border-style: dashed; box-shadow: none; opacity: .92; }
+.hint { padding: 0 24px 28px; font-size: 12.5px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>Filter rail — 5 directions</h1>
+  <p>Same content and same state in every column: Unread lens active, topic AI selected, tags llm + agents selected, one row hovered. Scroll each rail; it behaves as it would in the app.</p>
+  <div class="spacer"></div>
+  <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'paper' : 'dark'">PAPER / DARK</button>
+</div>
+<div class="deck">
+<section class="card baseline">
+  <header>
+    <div class="num">BASELINE</div>
+    <h2>Current</h2>
+    <div class="sub">what ships today</div>
+    <p class="why">BASELINE — the rail exactly as it ships today, reproduced from FilterRail.tsx at its real sizes: 18px serif title, 10px mono section labels, 12.5px row labels, 10.5px counts and tag chips, 26px rows. Included only as the thing to beat.</p>
+  </header>
+  <div class="frame"><style>
+  .v0.rail { width: 260px; height: 100%; display: flex; flex-direction: column;
+    background: var(--bg); font-family: var(--sans); color: var(--ink); }
+  .v0 .hd { padding: 18px 18px 14px; border-bottom: 1px solid var(--rule); }
+  .v0 .hd-t { font-family: var(--serif); font-size: 18px; font-weight: 500; letter-spacing: -.01em;
+    display: flex; align-items: center; gap: 8px; }
+  .v0 .logo { width: 22px; height: 22px; border-radius: 5px; background: var(--accent); color: #fff;
+    display: grid; place-items: center; font-family: var(--mono); font-size: 12px; font-weight: 600; }
+  .v0 .hd-s { margin-top: 4px; font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: .06em; }
+  .v0 .search-w { padding: 14px 14px 8px; }
+  .v0 .search { display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+    background: var(--surface-2); border-radius: 7px; border: 1px solid transparent; }
+  .v0 .search input { flex: 1; border: 0; background: transparent; outline: none; font-family: var(--sans);
+    font-size: 12.5px; color: var(--ink); min-width: 0; }
+  .v0 .lbl { padding: 16px 18px 6px; font-family: var(--mono); font-size: 10px; color: var(--muted);
+    letter-spacing: .1em; display: flex; align-items: center; }
+  .v0 .scroll { flex: 1; overflow-y: auto; padding-bottom: 10px; }
+  .v0 .rows { padding: 0 10px; }
+  .v0 .row { padding: 5px 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 9px; }
+  .v0 .row:hover, .v0 .row.is-hover { background: var(--surface-hover); }
+  .v0 .row.on { background: var(--surface-2); }
+  .v0 .row .name { flex: 1; font-family: var(--sans); font-size: 12.5px; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .v0 .row .n { font-family: var(--mono); font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .v0 .dot { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+  .v0 .dot.none { background: transparent; border: 1px dashed var(--rule-strong); }
+  .v0 .row .name.unfiled { font-style: italic; color: var(--muted); }
+  .v0 .mode { margin-left: auto; display: inline-flex; gap: 2px; }
+  .v0 .mode button { appearance: none; border: 0; cursor: pointer; border-radius: 4px; padding: 1px 5px;
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; background: transparent; color: var(--muted); }
+  .v0 .mode button.on { background: var(--ink); color: var(--bg); }
+  .v0 .chips { padding: 0 14px; display: flex; flex-wrap: wrap; gap: 5px; }
+  .v0 .chip { appearance: none; border: 1px solid var(--rule); background: transparent; color: var(--ink);
+    border-radius: 999px; padding: 3px 8px; cursor: pointer; font-family: var(--mono); font-size: 10.5px;
+    line-height: 1.4; display: inline-flex; gap: 5px; align-items: center; }
+  .v0 .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .v0 .chip .n { opacity: .6; font-variant-numeric: tabular-nums; }
+  .v0 .ft { padding: 12px; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 6px; }
+  .v0 .btn { appearance: none; font-family: var(--sans); cursor: pointer; display: inline-flex;
+    align-items: center; justify-content: center; gap: 6px; padding: 6px 12px; font-size: 13px;
+    border-radius: 6px; line-height: 1.2; background: transparent; color: var(--ink); border: 1px solid var(--rule-strong); }
+  .v0 .btn.ghost { border: 0; font-size: 12px; padding: 4px 8px; }
+  .v0 svg { stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+<div class="v0 rail">
+  <div class="hd">
+    <div class="hd-t"><div class="logo">R</div>Reel Notes</div>
+    <div class="hd-s">PERSONAL VIDEO DIGEST</div>
+  </div>
+  <div class="search-w">
+    <div class="search">
+      <svg width="13" height="13" viewBox="0 0 24 24" style="color:var(--muted)"><path d="M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14ZM21 21l-5-5"/></svg>
+      <input placeholder="Search summaries…">
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="rows">
+      <div class="row"><svg width="13" height="13" viewBox="0 0 24 24" style="color:var(--muted)"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span class="name">All videos</span><span class="n">42</span></div>
+      <div class="row on"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><span class="name">Unread</span><span class="n">11</span></div>
+      <div class="row"><svg width="13" height="13" viewBox="0 0 24 24" style="color:var(--muted)"><path d="m12 3 2.6 5.5 6 .9-4.3 4.2 1 6L12 16.8 6.7 19.6l1-6L3.4 9.4l6-.9L12 3Z"/></svg><span class="name">Starred</span><span class="n">6</span></div>
+    </div>
+    <div class="lbl">TOPICS</div>
+    <div class="rows">
+      <div class="row on"><span class="dot" style="background:#a85a2a"></span><span class="name">AI</span><span class="n">14</span></div>
+      <div class="row is-hover"><span class="dot" style="background:#3f6b46"></span><span class="name">Money</span><span class="n">8</span></div>
+      <div class="row"><span class="dot" style="background:#8a6a1f"></span><span class="name">Craft</span><span class="n">6</span></div>
+      <div class="row"><span class="dot" style="background:#2e6f8e"></span><span class="name">Body</span><span class="n">5</span></div>
+      <div class="row"><span class="dot" style="background:#6a4a8a"></span><span class="name">Software</span><span class="n">4</span></div>
+      <div class="row"><span class="dot" style="background:#9a3b2f"></span><span class="name">History</span><span class="n">3</span></div>
+      <div class="row"><span class="dot none"></span><span class="name unfiled">Unfiled</span><span class="n">9</span></div>
+    </div>
+    <div class="lbl">TAGS<span class="mode"><button class="on">ALL</button><button>ANY</button></span></div>
+    <div class="chips">
+      <button class="chip on">llm<span class="n">14</span></button>
+      <button class="chip on">agents<span class="n">9</span></button>
+      <button class="chip">investing<span class="n">7</span></button>
+      <button class="chip">woodworking<span class="n">6</span></button>
+      <button class="chip">interview<span class="n">5</span></button>
+      <button class="chip">rust<span class="n">4</span></button>
+      <button class="chip">sleep<span class="n">3</span></button>
+      <button class="chip">api-design<span class="n">3</span></button>
+      <button class="chip">backtesting<span class="n">2</span></button>
+      <button class="chip">joinery<span class="n">2</span></button>
+    </div>
+  </div>
+  <div class="ft">
+    <button class="btn"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add video</button>
+    <button class="btn ghost"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8L3 12Zm5-5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"/></svg>Manage tags</button>
+  </div>
+</div></div>
+</section>
+<section class="card">
+  <header>
+    <div class="num">OPTION 1</div>
+    <h2>Comfortable density</h2>
+    <div class="sub">same rail, breathing</div>
+    <p class="why">Variant 1 — &quot;Comfortable density.&quot; Same information architecture as today (lenses, topics, unfiled, tags), fixed purely by giving it a real type scale and real air: 15px row labels, 11.5px uppercase section heads, 13-14px counts/chips, 40-44px hit targets, generous line-height and padding throughout. Legibility comes from that disciplined scale plus a consistent left-icon/label/count grid so the eye has a rail to travel down. Unfiled stays inside the topic list&#x27;s rhythm (same row height, same position) but gets a warm accent-tinted background block, a bold count and a small &quot;sparkle&quot; glyph so it reads as an inviting to-do, not an error state or a stray topic.</p>
+  </header>
+  <div class="frame"><style>
+  .v1, .v1 * { box-sizing: border-box; }
+
+  .v1.rail {
+    width: 288px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    border-right: 1px solid var(--rule);
+  }
+
+  /* ---------- header ---------- */
+  .v1 .rail-header {
+    flex: 0 0 auto;
+    padding: 18px 16px 14px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .v1 .brand { display: flex; align-items: center; gap: 11px; }
+
+  .v1 .logo {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--surface);
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .v1 .brand-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+  .v1 .brand-name {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+
+  .v1 .brand-sub {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .v1 .search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .v1 .search-wrap svg {
+    position: absolute;
+    left: 12px;
+    width: 16px;
+    height: 16px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .v1 .search-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px 0 36px;
+    border-radius: 9px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+  }
+
+  .v1 .search-input::placeholder { color: var(--muted); }
+
+  /* ---------- scroll region ---------- */
+  .v1 .rail-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 12px 10px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .v1 .lenses { display: flex; flex-direction: column; gap: 3px; }
+
+  .v1 .lens-row {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 42px;
+    padding: 0 10px;
+    border-radius: 9px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .v1 .lens-row svg { width: 17px; height: 17px; color: var(--muted); flex: 0 0 auto; }
+
+  .v1 .lens-row .count {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .v1 .lens-row:hover { background: var(--surface-hover); }
+
+  .v1 .lens-row.is-active {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    font-weight: 700;
+  }
+
+  .v1 .lens-row.is-active svg { color: var(--accent); }
+  .v1 .lens-row.is-active .count { color: var(--ink); font-weight: 600; }
+
+  /* ---------- sections ---------- */
+  .v1 .section { display: flex; flex-direction: column; gap: 6px; }
+
+  .v1 .section-head {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 4px 10px 2px;
+  }
+
+  .v1 .section-head-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 4px;
+  }
+
+  .v1 .topic-list { display: flex; flex-direction: column; gap: 2px; }
+
+  .v1 .topic-row {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    height: 40px;
+    padding: 0 10px;
+    border-radius: 9px;
+    font-size: 15px;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .v1 .topic-row .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex: 0 0 auto;
+  }
+
+  .v1 .topic-row .count {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .v1 .topic-row:hover,
+  .v1 .topic-row.is-hover {
+    background: var(--surface-hover);
+  }
+
+  .v1 .topic-row.is-selected {
+    background: var(--surface-2);
+    font-weight: 700;
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+
+  .v1 .topic-row.is-selected .count { color: var(--ink); font-weight: 600; }
+
+  /* ---------- unfiled: the call to action ---------- */
+  .v1 .unfiled-row {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    height: 44px;
+    margin-top: 4px;
+    padding: 0 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    background: color-mix(in srgb, var(--accent) 13%, var(--surface));
+    border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--rule));
+  }
+
+  .v1 .unfiled-row:hover {
+    background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  }
+
+  .v1 .unfiled-icon {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+    color: var(--accent);
+  }
+
+  .v1 .unfiled-icon svg { width: 100%; height: 100%; }
+
+  .v1 .unfiled-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .v1 .unfiled-count {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--surface);
+    min-width: 26px;
+    height: 24px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+  }
+
+  /* ---------- tags ---------- */
+  .v1 .toggle-group {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 2px;
+  }
+
+  .v1 .toggle-btn {
+    all: unset;
+    box-sizing: border-box;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+
+  .v1 .toggle-btn:hover { color: var(--ink); }
+
+  .v1 .toggle-btn.is-active {
+    background: var(--accent);
+    color: var(--surface);
+  }
+
+  .v1 .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 4px 10px 2px;
+  }
+
+  .v1 .tag-chip {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .v1 .tag-chip .count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .v1 .tag-chip:hover { background: var(--surface-hover); border-color: var(--rule-strong); }
+
+  .v1 .tag-chip.is-selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--surface);
+  }
+
+  .v1 .tag-chip.is-selected .count { color: var(--surface); opacity: 0.85; }
+
+  /* ---------- footer ---------- */
+  .v1 .rail-footer {
+    flex: 0 0 auto;
+    padding: 14px 14px 16px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .v1 .btn-primary,
+  .v1 .btn-secondary {
+    all: unset;
+    box-sizing: border-box;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 9px;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .v1 .btn-primary svg,
+  .v1 .btn-secondary svg { width: 16px; height: 16px; }
+
+  .v1 .btn-primary {
+    height: 46px;
+    background: var(--accent);
+    color: var(--surface);
+  }
+
+  .v1 .btn-primary:hover { opacity: 0.9; }
+
+  .v1 .btn-secondary {
+    height: 40px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .v1 .btn-secondary:hover { background: var(--surface-hover); }
+</style>
+
+<div class="v1 rail">
+  <div class="rail-header">
+    <div class="brand">
+      <div class="logo">R</div>
+      <div class="brand-text">
+        <div class="brand-name">Reel Notes</div>
+        <div class="brand-sub">PERSONAL VIDEO DIGEST</div>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" type="text" placeholder="Search summaries…" />
+    </div>
+  </div>
+
+  <div class="rail-scroll">
+    <nav class="lenses">
+      <button class="lens-row">
+        All videos
+        <span class="count">42</span>
+      </button>
+      <button class="lens-row is-active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        Unread
+        <span class="count">11</span>
+      </button>
+      <button class="lens-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Starred
+        <span class="count">6</span>
+      </button>
+    </nav>
+
+    <div class="section">
+      <div class="section-head">Topics</div>
+      <div class="topic-list">
+        <button class="topic-row is-selected">
+          <span class="dot" style="background:#a85a2a"></span>
+          AI
+          <span class="count">14</span>
+        </button>
+        <button class="topic-row">
+          <span class="dot" style="background:#3f6b46"></span>
+          Money
+          <span class="count">8</span>
+        </button>
+        <button class="topic-row is-hover">
+          <span class="dot" style="background:#8a6a1f"></span>
+          Craft
+          <span class="count">6</span>
+        </button>
+        <button class="topic-row">
+          <span class="dot" style="background:#2e6f8e"></span>
+          Body
+          <span class="count">5</span>
+        </button>
+        <button class="topic-row">
+          <span class="dot" style="background:#6a4a8a"></span>
+          Software
+          <span class="count">4</span>
+        </button>
+        <button class="topic-row">
+          <span class="dot" style="background:#9a3b2f"></span>
+          History
+          <span class="count">3</span>
+        </button>
+      </div>
+
+      <button class="unfiled-row">
+        <span class="unfiled-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.5L18 9l-3.5 3 1 5-3.5-2.5L8.5 17l1-5L6 9l4.1-1.5L12 3z"/></svg>
+        </span>
+        <span class="unfiled-label">Unfiled</span>
+        <span class="unfiled-count">9</span>
+      </button>
+    </div>
+
+    <div class="section">
+      <div class="section-head-row">
+        <div class="section-head">Tags</div>
+        <div class="toggle-group">
+          <button class="toggle-btn is-active">ALL</button>
+          <button class="toggle-btn">ANY</button>
+        </div>
+      </div>
+      <div class="tag-cloud">
+        <button class="tag-chip is-selected">llm <span class="count">14</span></button>
+        <button class="tag-chip is-selected">agents <span class="count">9</span></button>
+        <button class="tag-chip">investing <span class="count">7</span></button>
+        <button class="tag-chip">woodworking <span class="count">6</span></button>
+        <button class="tag-chip">interview <span class="count">5</span></button>
+        <button class="tag-chip">rust <span class="count">4</span></button>
+        <button class="tag-chip">sleep <span class="count">3</span></button>
+        <button class="tag-chip">api-design <span class="count">3</span></button>
+        <button class="tag-chip">backtesting <span class="count">2</span></button>
+        <button class="tag-chip">joinery <span class="count">2</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="rail-footer">
+    <button class="btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add video
+    </button>
+    <button class="btn-secondary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L11 3.83A2 2 0 009.59 3.24H4a1 1 0 00-1 1v5.59a2 2 0 00.59 1.41l9.58 9.58a2 2 0 002.83 0l4.59-4.59a2 2 0 000-2.83z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
+      Manage tags
+    </button>
+  </div>
+</div></div>
+</section>
+<section class="card">
+  <header>
+    <div class="num">OPTION 2</div>
+    <h2>Grouped surface cards</h2>
+    <div class="sub">sections as panels</div>
+    <p class="why">Variant 2 — &quot;Grouped surface cards.&quot; The rail is broken into distinct raised panels (Lenses / Topics / Unfiled / Tags) instead of one flat scrolling list, so the eye locates a section by its card boundary, not by parsing rows. Legibility comes from a flat size increase (15-16px row labels, 11-12px card labels, 13px chips) plus generous 34-40px hit targets and a quiet two-tone card fill. Unfiled prominence comes from being pulled out as its own physically separated card between Topics and Tags, sitting in an accent-tinted surface with an oversized rounded badge and an inviting &quot;needs a topic&quot; subtext — it reads as a task tray waiting to be cleared, not as an error state.</p>
+  </header>
+  <div class="frame"><style>
+  .v2.rail {
+    width: 280px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    box-sizing: border-box;
+  }
+  .v2 * { box-sizing: border-box; }
+
+  /* ---------- header ---------- */
+  .v2 .rail-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 14px 12px;
+    flex: 0 0 auto;
+  }
+  .v2 .logo-tile {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 17px;
+    flex: 0 0 auto;
+  }
+  .v2 .header-text { min-width: 0; }
+  .v2 .app-title {
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+  .v2 .app-sub {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-top: 2px;
+    white-space: nowrap;
+  }
+
+  /* ---------- search ---------- */
+  .v2 .search-wrap {
+    flex: 0 0 auto;
+    padding: 0 14px 14px;
+    position: relative;
+  }
+  .v2 .search-icon {
+    position: absolute;
+    left: 26px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .v2 .search-input {
+    width: 100%;
+    height: 38px;
+    border-radius: 9px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    padding: 0 12px 0 34px;
+  }
+  .v2 .search-input::placeholder { color: var(--muted); }
+  .v2 .search-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* ---------- scroll region ---------- */
+  .v2 .rail-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 0 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ---------- generic card ---------- */
+  .v2 .card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 8px;
+  }
+  .v2 .card-label {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    padding: 4px 8px 6px;
+  }
+
+  /* ---------- lens rows ---------- */
+  .v2 .lens-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 40px;
+    padding: 0 8px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .v2 .lens-row:hover,
+  .v2 .lens-row.is-hover {
+    background: var(--surface-hover);
+  }
+  .v2 .lens-row.is-active {
+    background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  }
+  .v2 .lens-icon {
+    flex: 0 0 auto;
+    color: var(--muted);
+    display: flex;
+  }
+  .v2 .lens-row.is-active .lens-icon { color: var(--accent); }
+  .v2 .lens-label {
+    flex: 1 1 auto;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .v2 .lens-row.is-active .lens-label { font-weight: 700; color: var(--accent); }
+  .v2 .lens-count {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--surface-2);
+    border-radius: 999px;
+    padding: 2px 8px;
+    flex: 0 0 auto;
+  }
+  .v2 .lens-row.is-active .lens-count {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 20%, var(--surface-2));
+  }
+
+  /* ---------- topic rows ---------- */
+  .v2 .topic-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 38px;
+    padding: 0 8px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .v2 .topic-row:hover,
+  .v2 .topic-row.is-hover {
+    background: var(--surface-hover);
+  }
+  .v2 .topic-row.is-selected {
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  }
+  .v2 .topic-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex: 0 0 auto;
+  }
+  .v2 .topic-label {
+    flex: 1 1 auto;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .v2 .topic-row.is-selected .topic-label { font-weight: 700; }
+  .v2 .topic-count {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .v2 .topic-row.is-selected .topic-count { color: var(--accent); }
+
+  /* ---------- unfiled card (the to-do tray) ---------- */
+  .v2 .unfiled-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--accent) 11%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--rule));
+    cursor: pointer;
+    min-height: 34px;
+  }
+  .v2 .unfiled-card:hover {
+    background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  }
+  .v2 .unfiled-icon {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--accent) 24%, var(--surface));
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .v2 .unfiled-text { flex: 1 1 auto; min-width: 0; }
+  .v2 .unfiled-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .v2 .unfiled-sub {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+  .v2 .unfiled-badge {
+    flex: 0 0 auto;
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+    border-radius: 999px;
+    padding: 4px 12px;
+  }
+
+  /* ---------- tags card ---------- */
+  .v2 .tags-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px 8px;
+  }
+  .v2 .tags-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--surface-2);
+    border-radius: 7px;
+    padding: 2px;
+  }
+  .v2 .toggle-btn {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    padding: 4px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .v2 .toggle-btn.is-active {
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .v2 .tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 2px 8px 8px;
+  }
+  .v2 .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    font-size: 13px;
+    cursor: pointer;
+    gap: 6px;
+  }
+  .v2 .tag-chip:hover { background: var(--surface-hover); }
+  .v2 .tag-chip .tag-count { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+  .v2 .tag-chip.is-selected {
+    background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .v2 .tag-chip.is-selected .tag-count { color: var(--accent); }
+
+  /* ---------- footer ---------- */
+  .v2 .rail-footer {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 8px;
+    padding: 12px 14px 14px;
+    border-top: 1px solid var(--rule);
+  }
+  .v2 .btn-primary,
+  .v2 .btn-secondary {
+    flex: 1 1 0;
+    height: 40px;
+    border-radius: 9px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .v2 .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    border: 1px solid var(--accent);
+  }
+  .v2 .btn-primary:hover { background: color-mix(in srgb, var(--accent) 85%, var(--ink)); }
+  .v2 .btn-secondary {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--rule-strong);
+  }
+  .v2 .btn-secondary:hover { background: var(--surface-hover); }
+</style>
+
+<div class="v2 rail">
+  <div class="rail-header">
+    <div class="logo-tile">R</div>
+    <div class="header-text">
+      <div class="app-title">Reel Notes</div>
+      <div class="app-sub">PERSONAL VIDEO DIGEST</div>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </span>
+    <input class="search-input" type="text" placeholder="Search summaries…" />
+  </div>
+
+  <div class="rail-scroll">
+
+    <div class="card">
+      <div class="lens-row">
+        <span class="lens-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1"/><rect x="3" y="16" width="18" height="4" rx="1"/></svg>
+        </span>
+        <span class="lens-label">All videos</span>
+        <span class="lens-count">42</span>
+      </div>
+      <div class="lens-row is-active">
+        <span class="lens-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </span>
+        <span class="lens-label">Unread</span>
+        <span class="lens-count">11</span>
+      </div>
+      <div class="lens-row">
+        <span class="lens-icon">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 21.5 12 17.5 5.5 21.5 7 14.5 2 9.5 9 9 12 2"/></svg>
+        </span>
+        <span class="lens-label">Starred</span>
+        <span class="lens-count">6</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">TOPICS</div>
+      <div class="topic-row is-selected">
+        <span class="topic-dot" style="background:#a85a2a"></span>
+        <span class="topic-label">AI</span>
+        <span class="topic-count">14</span>
+      </div>
+      <div class="topic-row is-hover">
+        <span class="topic-dot" style="background:#3f6b46"></span>
+        <span class="topic-label">Money</span>
+        <span class="topic-count">8</span>
+      </div>
+      <div class="topic-row">
+        <span class="topic-dot" style="background:#8a6a1f"></span>
+        <span class="topic-label">Craft</span>
+        <span class="topic-count">6</span>
+      </div>
+      <div class="topic-row">
+        <span class="topic-dot" style="background:#2e6f8e"></span>
+        <span class="topic-label">Body</span>
+        <span class="topic-count">5</span>
+      </div>
+      <div class="topic-row">
+        <span class="topic-dot" style="background:#6a4a8a"></span>
+        <span class="topic-label">Software</span>
+        <span class="topic-count">4</span>
+      </div>
+      <div class="topic-row">
+        <span class="topic-dot" style="background:#9a3b2f"></span>
+        <span class="topic-label">History</span>
+        <span class="topic-count">3</span>
+      </div>
+    </div>
+
+    <div class="unfiled-card">
+      <span class="unfiled-icon">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+      </span>
+      <span class="unfiled-text">
+        <div class="unfiled-title">Unfiled</div>
+        <div class="unfiled-sub">Waiting for a topic</div>
+      </span>
+      <span class="unfiled-badge">9</span>
+    </div>
+
+    <div class="card">
+      <div class="tags-card-head">
+        <div class="card-label" style="padding:0;">TAGS</div>
+        <div class="tags-toggle">
+          <button class="toggle-btn is-active">ALL</button>
+          <button class="toggle-btn">ANY</button>
+        </div>
+      </div>
+      <div class="tag-chips">
+        <span class="tag-chip is-selected"><span>llm</span><span class="tag-count">14</span></span>
+        <span class="tag-chip is-selected"><span>agents</span><span class="tag-count">9</span></span>
+        <span class="tag-chip"><span>investing</span><span class="tag-count">7</span></span>
+        <span class="tag-chip"><span>woodworking</span><span class="tag-count">6</span></span>
+        <span class="tag-chip"><span>interview</span><span class="tag-count">5</span></span>
+        <span class="tag-chip"><span>rust</span><span class="tag-count">4</span></span>
+        <span class="tag-chip"><span>sleep</span><span class="tag-count">3</span></span>
+        <span class="tag-chip"><span>api-design</span><span class="tag-count">3</span></span>
+        <span class="tag-chip"><span>backtesting</span><span class="tag-count">2</span></span>
+        <span class="tag-chip"><span>joinery</span><span class="tag-count">2</span></span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="rail-footer">
+    <button class="btn-primary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add video
+    </button>
+    <button class="btn-secondary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83V3H3v8h.83l9.58 9.59a2 2 0 0 0 2.83 0l4.35-4.35a2 2 0 0 0 0-2.83z"/><circle cx="6.5" cy="6.5" r="1.5"/></svg>
+      Manage tags
+    </button>
+  </div>
+</div></div>
+</section>
+<section class="card">
+  <header>
+    <div class="num">OPTION 3</div>
+    <h2>Modern app sidebar</h2>
+    <div class="sub">Linear / Things / Mail</div>
+    <p class="why">Variant 3 — &quot;Modern app sidebar&quot; (Linear / Things / Apple Mail / Notion muscle memory). Every row is a tall pill: a fixed 20px leading column (icon or colour dot) so every label lands on the same x-position, a right-aligned muted numeral, and a selected state that is a SOLID filled pill (var(--accent) background + var(--bg) text) rather than a faint tint — this is how mail/project sidebars read &quot;you are here&quot; at a glance. (a) Legibility: labels are 15px, section headers 12px uppercase, tag chips 13px, every row/chip is 38-40px tall with generous horizontal padding, so trackpad hits are forgiving. (b) Unfiled prominence: it sits at the bottom of the Topics group as the one row that is ALWAYS coloured — a warm accent-tinted filled pill with an inbox icon and a badge-style count — so unlike the neutral topic rows (coloured only on hover/select) it reads as a standing invitation (&quot;9 waiting to be filed&quot;) rather than an error state.</p>
+  </header>
+  <div class="frame"><style>
+  .v3.rail {
+    width: 280px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    box-sizing: border-box;
+    border-right: 1px solid var(--rule);
+  }
+  .v3 * { box-sizing: border-box; }
+  .v3 button { font-family: inherit; }
+
+  /* ---------- header ---------- */
+  .v3 .rail-header {
+    flex: 0 0 auto;
+    padding: 16px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .v3 .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .v3 .logo-tile {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 auto;
+    border-radius: 8px;
+    background: var(--accent);
+    color: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .v3 .brand-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .v3 .brand-name {
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+  .v3 .brand-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.09em;
+    color: var(--muted);
+  }
+
+  .v3 .search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .v3 .search-wrap svg {
+    position: absolute;
+    left: 12px;
+    width: 16px;
+    height: 16px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .v3 .search-input {
+    width: 100%;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    color: var(--ink);
+    padding: 0 12px 0 36px;
+    font-size: 14px;
+    font-family: var(--sans);
+  }
+  .v3 .search-input::placeholder { color: var(--muted); }
+  .v3 .search-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .v3 .lenses {
+    display: flex;
+    gap: 6px;
+  }
+  .v3 .lens-pill {
+    flex: 1;
+    height: 34px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    cursor: pointer;
+  }
+  .v3 .lens-pill:hover { background: var(--surface-hover); }
+  .v3 .lens-pill .count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .v3 .lens-pill.is-selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+  .v3 .lens-pill.is-selected .count { color: var(--bg); opacity: 0.75; }
+
+  /* ---------- scroll body ---------- */
+  .v3 .rail-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 10px 10px 4px;
+  }
+  .v3 .section { margin-bottom: 18px; }
+  .v3 .section-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px 8px;
+  }
+  .v3 .section-header {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    padding: 0 6px 8px;
+  }
+  .v3 .section-header-row .section-header { padding: 0; }
+
+  .v3 .toggle-group {
+    display: flex;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .v3 .toggle-btn {
+    border: none;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .v3 .toggle-btn + .toggle-btn { border-left: 1px solid var(--rule); }
+  .v3 .toggle-btn:hover { background: var(--surface-hover); color: var(--ink); }
+  .v3 .toggle-btn.is-active { background: var(--accent); color: var(--bg); }
+
+  .v3 .row-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /* ---------- topic rows ---------- */
+  .v3 .topic-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 39px;
+    padding: 0 10px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    color: var(--ink);
+    font-size: 15px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .v3 .topic-row:hover,
+  .v3 .topic-row.is-hover {
+    background: var(--surface-hover);
+  }
+  .v3 .topic-row .lead {
+    flex: 0 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .v3 .topic-row .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    background: var(--dot);
+    display: block;
+  }
+  .v3 .topic-row .label {
+    flex: 1 1 auto;
+    margin-left: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .v3 .topic-row .count {
+    flex: 0 0 auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    margin-left: 8px;
+  }
+  .v3 .topic-row.is-selected {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .v3 .topic-row.is-selected .count { color: var(--bg); opacity: 0.75; }
+  .v3 .topic-row.is-selected .dot {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--bg) 55%, transparent);
+  }
+
+  /* ---------- unfiled: the one always-coloured row ---------- */
+  .v3 .unfiled-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 42px;
+    margin-top: 6px;
+    padding: 0 10px;
+    border: 1px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+    background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+    border-radius: 10px;
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+  }
+  .v3 .unfiled-row:hover {
+    background: color-mix(in srgb, var(--accent) 24%, var(--surface));
+    border-style: solid;
+  }
+  .v3 .unfiled-row .lead {
+    flex: 0 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+  }
+  .v3 .unfiled-row .lead svg { width: 17px; height: 17px; }
+  .v3 .unfiled-row .label { flex: 1 1 auto; margin-left: 8px; }
+  .v3 .unfiled-row .badge {
+    flex: 0 0 auto;
+    min-width: 24px;
+    height: 22px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+  }
+
+  /* ---------- tag chips ---------- */
+  .v3 .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 0 6px;
+  }
+  .v3 .tag-chip {
+    height: 34px;
+    padding: 0 13px;
+    border-radius: 999px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .v3 .tag-chip:hover { background: var(--surface-hover); border-color: var(--rule-strong); }
+  .v3 .tag-chip .tag-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .v3 .tag-chip.is-selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+  .v3 .tag-chip.is-selected .tag-count { color: var(--bg); opacity: 0.75; }
+
+  /* ---------- footer ---------- */
+  .v3 .rail-footer {
+    flex: 0 0 auto;
+    padding: 12px 14px 14px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .v3 .btn-primary,
+  .v3 .btn-secondary {
+    height: 40px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .v3 .btn-primary {
+    border: none;
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .v3 .btn-primary:hover { filter: brightness(1.08); }
+  .v3 .btn-secondary {
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .v3 .btn-secondary:hover { background: var(--surface-hover); }
+  .v3 .rail-footer svg { width: 16px; height: 16px; }
+</style>
+
+<div class="v3 rail">
+  <div class="rail-header">
+    <div class="brand">
+      <div class="logo-tile">R</div>
+      <div class="brand-text">
+        <div class="brand-name">Reel Notes</div>
+        <div class="brand-sub">PERSONAL VIDEO DIGEST</div>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input class="search-input" type="text" placeholder="Search summaries&#8230;" />
+    </div>
+
+    <div class="lenses">
+      <button class="lens-pill">
+        All videos <span class="count">42</span>
+      </button>
+      <button class="lens-pill is-selected">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+        Unread <span class="count">11</span>
+      </button>
+      <button class="lens-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+        Starred <span class="count">6</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="rail-scroll">
+    <div class="section">
+      <div class="section-header">Topics</div>
+      <div class="row-list">
+        <button class="topic-row is-selected">
+          <span class="lead"><span class="dot" style="--dot:#a85a2a"></span></span>
+          <span class="label">AI</span>
+          <span class="count">14</span>
+        </button>
+        <button class="topic-row">
+          <span class="lead"><span class="dot" style="--dot:#3f6b46"></span></span>
+          <span class="label">Money</span>
+          <span class="count">8</span>
+        </button>
+        <button class="topic-row">
+          <span class="lead"><span class="dot" style="--dot:#8a6a1f"></span></span>
+          <span class="label">Craft</span>
+          <span class="count">6</span>
+        </button>
+        <button class="topic-row">
+          <span class="lead"><span class="dot" style="--dot:#2e6f8e"></span></span>
+          <span class="label">Body</span>
+          <span class="count">5</span>
+        </button>
+        <button class="topic-row is-hover">
+          <span class="lead"><span class="dot" style="--dot:#6a4a8a"></span></span>
+          <span class="label">Software</span>
+          <span class="count">4</span>
+        </button>
+        <button class="topic-row">
+          <span class="lead"><span class="dot" style="--dot:#9a3b2f"></span></span>
+          <span class="label">History</span>
+          <span class="count">3</span>
+        </button>
+
+        <button class="unfiled-row">
+          <span class="lead">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-6l-2 3h-4l-2-3H2"></path>
+              <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+            </svg>
+          </span>
+          <span class="label">Unfiled</span>
+          <span class="badge">9</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header-row">
+        <div class="section-header">Tags</div>
+        <div class="toggle-group">
+          <button class="toggle-btn is-active">ALL</button>
+          <button class="toggle-btn">ANY</button>
+        </div>
+      </div>
+      <div class="tag-cloud">
+        <button class="tag-chip is-selected">llm <span class="tag-count">14</span></button>
+        <button class="tag-chip is-selected">agents <span class="tag-count">9</span></button>
+        <button class="tag-chip">investing <span class="tag-count">7</span></button>
+        <button class="tag-chip">woodworking <span class="tag-count">6</span></button>
+        <button class="tag-chip">interview <span class="tag-count">5</span></button>
+        <button class="tag-chip">rust <span class="tag-count">4</span></button>
+        <button class="tag-chip">sleep <span class="tag-count">3</span></button>
+        <button class="tag-chip">api-design <span class="tag-count">3</span></button>
+        <button class="tag-chip">backtesting <span class="tag-count">2</span></button>
+        <button class="tag-chip">joinery <span class="tag-count">2</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="rail-footer">
+    <button class="btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      Add video
+    </button>
+    <button class="btn-secondary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.59 13.41L11 3.83V3H4v7h.83l9.58 9.59a2 2 0 0 0 2.83 0l3.35-3.35a2 2 0 0 0 0-2.83z"></path>
+        <circle cx="7.5" cy="6.5" r="1"></circle>
+      </svg>
+      Manage tags
+    </button>
+  </div>
+</div></div>
+</section>
+<section class="card">
+  <header>
+    <div class="num">OPTION 4</div>
+    <h2>Editorial contents page</h2>
+    <div class="sub">serif table of contents</div>
+    <p class="why">Variant 4 — &quot;Editorial contents page&quot;. The rail reads as a magazine&#x27;s table of contents: topic names sit in Source Serif 4 at 16.5px with a dotted leader running to a small mono page-count, exactly like a TOC entry running to a page number. (a) Legibility: every list label lives at 14px+ (topics at 16.5px), section heads at 11px mono, chips at 12.5px — a straight jump from the ~12px/26px-row original, plus generous 34-40px row heights. (b) Unfiled prominence: instead of styling it as one more contents line, it is pulled out as a tinted, hairline-bordered &quot;stub&quot; insert with its own big serif figure and a quiet &quot;File now&quot; action — visually an editorial call-out, not a to-do that reads as an error. Selection stays calm (accent margin bar + weight shift, no fills) so the one filled insert — Unfiled — is the page&#x27;s clear focal point; hover states get a warm surface wash to keep the page from feeling inert.</p>
+  </header>
+  <div class="frame"><style>
+  .v4.rail {
+    width: 288px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    box-sizing: border-box;
+    border-right: 1px solid var(--rule);
+  }
+  .v4 * { box-sizing: border-box; }
+
+  /* ---------- header ---------- */
+  .v4 .rail-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 16px 14px;
+    border-bottom: 1px solid var(--rule);
+    flex: 0 0 auto;
+  }
+  .v4 .logo-tile {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 auto;
+    background: var(--accent);
+    color: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 17px;
+  }
+  .v4 .header-text { min-width: 0; }
+  .v4 .app-title {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 1.15;
+  }
+  .v4 .app-subline {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* ---------- search ---------- */
+  .v4 .search {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 16px 6px;
+    padding: 0 10px;
+    height: 38px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+  }
+  .v4 .search svg { flex: 0 0 auto; color: var(--muted); }
+  .v4 .search input {
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    width: 100%;
+    height: 100%;
+  }
+  .v4 .search input::placeholder { color: var(--muted); }
+
+  /* ---------- scroll body ---------- */
+  .v4 .rail-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding-bottom: 8px;
+  }
+
+  /* ---------- lenses ---------- */
+  .v4 .lenses {
+    padding: 8px 10px 4px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 14px;
+  }
+  .v4 .lens-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 36px;
+    padding: 0 8px;
+    position: relative;
+    cursor: pointer;
+    font-size: 14.5px;
+  }
+  .v4 .lens-row::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 3px;
+    background: var(--accent);
+    opacity: 0;
+  }
+  .v4 .lens-row:hover,
+  .v4 .lens-row.is-hover {
+    background: var(--surface-hover);
+  }
+  .v4 .lens-row.is-active {
+    font-weight: 700;
+  }
+  .v4 .lens-row.is-active::before { opacity: 1; }
+  .v4 .lens-icon {
+    flex: 0 0 auto;
+    display: flex;
+    color: var(--muted);
+  }
+  .v4 .lens-row.is-active .lens-icon { color: var(--accent); }
+  .v4 .lens-label { flex: 1 1 auto; color: var(--ink); }
+  .v4 .lens-row:not(.is-active) .lens-label { color: var(--ink); }
+  .v4 .lens-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ---------- unfiled stub (the insert) ---------- */
+  .v4 .unfiled-stub {
+    margin: 0 12px 18px;
+    padding: 12px 12px 11px;
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    border: 1px solid var(--rule-strong);
+    position: relative;
+  }
+  .v4 .unfiled-stub::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+  }
+  .v4 .unfiled-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .v4 .unfiled-kicker {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .v4 .unfiled-figure {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .v4 .unfiled-copy {
+    font-family: var(--sans);
+    font-size: 13.5px;
+    color: var(--ink);
+    margin: 6px 0 9px;
+  }
+  .v4 .unfiled-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 0 4px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--accent);
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+  }
+  .v4 .unfiled-action:hover { border-bottom-color: var(--accent); }
+  .v4 .unfiled-action svg { flex: 0 0 auto; }
+
+  /* ---------- section heading ---------- */
+  .v4 .section-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    margin: 0 0 6px;
+  }
+  .v4 .section-head .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .v4 .section-head .rule {
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--rule);
+  }
+  .v4 .section-head svg { color: var(--muted); flex: 0 0 auto; }
+
+  /* ---------- topics (contents-page rows) ---------- */
+  .v4 .topics { margin-bottom: 18px; }
+  .v4 .topic-row {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 16px;
+    position: relative;
+    cursor: pointer;
+  }
+  .v4 .topic-row::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 5px;
+    bottom: 5px;
+    width: 3px;
+    background: var(--accent);
+    opacity: 0;
+  }
+  .v4 .topic-row:hover,
+  .v4 .topic-row.is-hover {
+    background: var(--surface-hover);
+  }
+  .v4 .topic-row.is-selected::before { opacity: 1; }
+  .v4 .topic-dot {
+    width: 9px;
+    height: 9px;
+    flex: 0 0 auto;
+    margin-right: 10px;
+  }
+  .v4 .topic-name {
+    font-family: var(--serif);
+    font-size: 16.5px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .v4 .topic-row.is-selected .topic-name {
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .v4 .topic-leader {
+    flex: 1 1 auto;
+    height: 0;
+    margin: 0 8px;
+    border-bottom: 1px dotted var(--rule-strong);
+    transform: translateY(-5px);
+  }
+  .v4 .topic-count {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    flex: 0 0 auto;
+  }
+  .v4 .topic-row.is-selected .topic-count { color: var(--ink); }
+
+  /* ---------- tags ---------- */
+  .v4 .tags-section { padding: 0 16px; }
+  .v4 .tags-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    margin: -4px 0 10px;
+  }
+  .v4 .match-toggle {
+    display: flex;
+    border: 1px solid var(--rule-strong);
+  }
+  .v4 .match-btn {
+    min-height: 26px;
+    padding: 0 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    background: var(--surface);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  .v4 .match-btn + .match-btn { border-left: 1px solid var(--rule-strong); }
+  .v4 .match-btn.is-active {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 700;
+  }
+  .v4 .match-btn:hover:not(.is-active) { background: var(--surface-hover); }
+
+  .v4 .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+  .v4 .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--rule-strong);
+    background: var(--surface);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .v4 .tag-chip:hover { background: var(--surface-hover); }
+  .v4 .tag-chip .n { color: var(--muted); }
+  .v4 .tag-chip.is-selected {
+    background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+  .v4 .tag-chip.is-selected .n { color: var(--ink); }
+  .v4 .tag-chip.is-selected svg { color: var(--accent); }
+
+  /* ---------- footer ---------- */
+  .v4 .rail-footer {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--rule);
+  }
+  .v4 .btn {
+    flex: 1 1 auto;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 14.5px;
+    cursor: pointer;
+    border: 1px solid var(--rule-strong);
+  }
+  .v4 .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+  .v4 .btn-primary:hover { background: color-mix(in srgb, var(--accent) 85%, var(--ink)); }
+  .v4 .btn-secondary {
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .v4 .btn-secondary:hover { background: var(--surface-hover); }
+</style>
+
+<div class="v4 rail">
+  <div class="rail-header">
+    <div class="logo-tile">R</div>
+    <div class="header-text">
+      <div class="app-title">Reel Notes</div>
+      <div class="app-subline">PERSONAL VIDEO DIGEST</div>
+    </div>
+  </div>
+
+  <div class="search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" placeholder="Search summaries…" />
+  </div>
+
+  <div class="rail-scroll">
+    <div class="lenses">
+      <div class="lens-row">
+        <span class="lens-label">All videos</span>
+        <span class="lens-count">42</span>
+      </div>
+      <div class="lens-row is-active">
+        <span class="lens-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </span>
+        <span class="lens-label">Unread</span>
+        <span class="lens-count">11</span>
+      </div>
+      <div class="lens-row">
+        <span class="lens-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2.5 15.1 8.8 22 9.8 17 14.6 18.2 21.5 12 18.2 5.8 21.5 7 14.6 2 9.8 8.9 8.8 12 2.5"/></svg>
+        </span>
+        <span class="lens-label">Starred</span>
+        <span class="lens-count">6</span>
+      </div>
+    </div>
+
+    <div class="unfiled-stub">
+      <div class="unfiled-top">
+        <span class="unfiled-kicker">Unfiled</span>
+        <span class="unfiled-figure">9</span>
+      </div>
+      <p class="unfiled-copy">9 videos need filing</p>
+      <span class="unfiled-action">
+        File now
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </span>
+    </div>
+
+    <div class="topics">
+      <div class="section-head">
+        <span class="label">Topics</span>
+        <span class="rule"></span>
+      </div>
+
+      <div class="topic-row is-selected">
+        <span class="topic-dot" style="background:#a85a2a"></span>
+        <span class="topic-name">AI</span>
+        <span class="topic-leader"></span>
+        <span class="topic-count">14</span>
+      </div>
+      <div class="topic-row is-hover">
+        <span class="topic-dot" style="background:#3f6b46"></span>
+        <span class="topic-name">Money</span>
+        <span class="topic-leader"></span>
+        <span class="topic-count">8</span>
+      </div>
+      <div class="topic-row">
+        <span class="topic-dot" style="background:#8a6a1f"></span>
+        <span class="topic-name">Craft</span>
+        <span class="topic-leader"></span>
+        <span class="topic-count">6</span>
+      </div>
+      <div class="topic-row">
+        <span class="topic-dot" style="background:#2e6f8e"></span>
+        <span class="topic-name">Body</span>
+        <span class="topic-leader"></span>
+        <span class="topic-count">5</span>
+      </div>
+      <div class="topic-row">
+        <span class="topic-dot" style="background:#6a4a8a"></span>
+        <span class="topic-name">Software</span>
+        <span class="topic-leader"></span>
+        <span class="topic-count">4</span>
+      </div>
+      <div class="topic-row">
+        <span class="topic-dot" style="background:#9a3b2f"></span>
+        <span class="topic-name">History</span>
+        <span class="topic-leader"></span>
+        <span class="topic-count">3</span>
+      </div>
+    </div>
+
+    <div class="tags-section">
+      <div class="section-head">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.25L3 3v6.59a2 2 0 0 0 .58 1.41l9.6 9.6a2 2 0 0 0 2.82 0l4.6-4.6a2 2 0 0 0 0-2.83z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+        <span class="label">Tags</span>
+        <span class="rule"></span>
+      </div>
+
+      <div class="tags-toolbar">
+        <div class="match-toggle">
+          <span class="match-btn is-active">ALL</span>
+          <span class="match-btn">ANY</span>
+        </div>
+      </div>
+
+      <div class="tag-list">
+        <span class="tag-chip is-selected">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          llm <span class="n">14</span>
+        </span>
+        <span class="tag-chip is-selected">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          agents <span class="n">9</span>
+        </span>
+        <span class="tag-chip">investing <span class="n">7</span></span>
+        <span class="tag-chip">woodworking <span class="n">6</span></span>
+        <span class="tag-chip">interview <span class="n">5</span></span>
+        <span class="tag-chip">rust <span class="n">4</span></span>
+        <span class="tag-chip">sleep <span class="n">3</span></span>
+        <span class="tag-chip">api-design <span class="n">3</span></span>
+        <span class="tag-chip">backtesting <span class="n">2</span></span>
+        <span class="tag-chip">joinery <span class="n">2</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="rail-footer">
+    <span class="btn btn-primary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add video
+    </span>
+    <span class="btn btn-secondary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.25L3 3v6.59a2 2 0 0 0 .58 1.41l9.6 9.6a2 2 0 0 0 2.82 0l4.6-4.6a2 2 0 0 0 0-2.83z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+      Manage tags
+    </span>
+  </div>
+</div></div>
+</section>
+<section class="card">
+  <header>
+    <div class="num">OPTION 5</div>
+    <h2>Topics first</h2>
+    <div class="sub">everything else earns its place</div>
+    <p class="why">Variant 5 — &quot;Topics first, everything else earns its place&quot; Idea: topics are the whole point of this rail, so they get the whole rail. Header collapses to one line, the three lenses become a compact icon-button trio under search, and TAGS becomes a disclosure sitting under the topics (open here, but visually second-class: smaller type, muted surface). (a) Legibility: topic rows are 44px tall with 17-18px labels and mono-figure counts big enough to scan at a glance without aiming. (b) Unfiled prominence: it sits above the topic list as its own accent-tinted block with a left accent bar, an inbox icon instead of a topic dot (so it reads as &quot;not a topic&quot;), an oversized count, and a one-word &quot;Sort →&quot; invitation — loud, but framed as an easy win, not an error.</p>
+  </header>
+  <div class="frame"><style>
+.v5.rail{
+  width:284px;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  box-sizing:border-box;
+  border-right:1px solid var(--rule);
+}
+.v5 *{ box-sizing:border-box; }
+
+/* ---------- header ---------- */
+.v5 .header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:14px 16px;
+  border-bottom:1px solid var(--rule);
+  flex:0 0 auto;
+}
+.v5 .logo{
+  width:28px;
+  height:28px;
+  border-radius:6px;
+  background:var(--accent);
+  color:var(--bg);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:var(--serif);
+  font-weight:700;
+  font-size:16px;
+  flex:0 0 auto;
+}
+.v5 .header-text{ min-width:0; display:flex; flex-direction:column; gap:1px; }
+.v5 .app-name{
+  font-family:var(--serif);
+  font-size:16px;
+  font-weight:700;
+  line-height:1.1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.v5 .app-sub{
+  font-size:9.5px;
+  letter-spacing:.08em;
+  color:var(--muted);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* ---------- search ---------- */
+.v5 .search-wrap{
+  flex:0 0 auto;
+  padding:10px 16px;
+  border-bottom:1px solid var(--rule);
+}
+.v5 .search-field{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  height:38px;
+  padding:0 10px;
+  border-radius:8px;
+  background:var(--surface);
+  border:1px solid var(--rule);
+}
+.v5 .search-field svg{ flex:0 0 auto; color:var(--muted); }
+.v5 .search-field input{
+  border:0;
+  outline:0;
+  background:transparent;
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:14px;
+  width:100%;
+}
+.v5 .search-field input::placeholder{ color:var(--muted); }
+
+/* ---------- scroll region ---------- */
+.v5 .rail-scroll{
+  flex:1 1 auto;
+  overflow-y:auto;
+  min-height:0;
+}
+
+/* ---------- lenses: compact icon trio ---------- */
+.v5 .lenses{
+  display:flex;
+  gap:6px;
+  padding:10px 16px;
+  border-bottom:1px solid var(--rule);
+}
+.v5 .lens-btn{
+  flex:1 1 0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  height:44px;
+  border-radius:8px;
+  background:var(--surface);
+  border:1px solid var(--rule);
+  color:var(--muted);
+  cursor:pointer;
+}
+.v5 .lens-btn svg{ width:15px; height:15px; }
+.v5 .lens-btn .lens-count{
+  font-family:var(--mono);
+  font-size:12px;
+  line-height:1;
+}
+.v5 .lens-btn:hover{ background:var(--surface-hover); color:var(--ink); }
+.v5 .lens-btn.active{
+  background:var(--surface-2);
+  border-color:var(--accent);
+  color:var(--ink);
+}
+.v5 .lens-btn.active svg{ color:var(--accent); }
+
+/* ---------- unfiled block (loudest row) ---------- */
+.v5 .unfiled-wrap{ padding:12px 16px 4px; }
+.v5 .unfiled-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  height:52px;
+  padding:0 12px 0 10px;
+  border-radius:8px;
+  background:color-mix(in srgb, var(--accent) 14%, var(--surface));
+  border-left:4px solid var(--accent);
+  cursor:pointer;
+}
+.v5 .unfiled-row:hover{
+  background:color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+.v5 .unfiled-icon{
+  width:26px;
+  height:26px;
+  border-radius:6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--accent);
+  flex:0 0 auto;
+}
+.v5 .unfiled-text{ flex:1 1 auto; min-width:0; }
+.v5 .unfiled-label{
+  font-size:15.5px;
+  font-weight:700;
+  line-height:1.2;
+}
+.v5 .unfiled-hint{
+  font-size:11px;
+  color:var(--muted);
+}
+.v5 .unfiled-count{
+  font-family:var(--mono);
+  font-size:20px;
+  font-weight:700;
+  color:var(--accent);
+  flex:0 0 auto;
+}
+.v5 .unfiled-arrow{
+  flex:0 0 auto;
+  color:var(--accent);
+  opacity:.8;
+}
+
+/* ---------- topics ---------- */
+.v5 .section-header{
+  padding:14px 16px 6px;
+  font-size:11px;
+  letter-spacing:.08em;
+  font-weight:700;
+  color:var(--muted);
+}
+.v5 .topic-list{ padding:0 10px 8px; display:flex; flex-direction:column; gap:2px; }
+.v5 .topic-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  height:44px;
+  padding:0 10px;
+  border-radius:8px;
+  cursor:pointer;
+  border-left:3px solid transparent;
+}
+.v5 .topic-row:hover,
+.v5 .topic-row.is-hover{
+  background:var(--surface-hover);
+}
+.v5 .topic-row.selected{
+  background:var(--surface-2);
+  border-left-color:var(--accent);
+}
+.v5 .topic-dot{
+  width:11px;
+  height:11px;
+  border-radius:3px;
+  flex:0 0 auto;
+}
+.v5 .topic-label{
+  flex:1 1 auto;
+  font-size:17px;
+  line-height:1.2;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.v5 .topic-row.selected .topic-label{ font-weight:700; }
+.v5 .topic-count{
+  font-family:var(--mono);
+  font-size:14px;
+  color:var(--muted);
+  flex:0 0 auto;
+}
+.v5 .topic-row.selected .topic-count{ color:var(--ink); font-weight:700; }
+
+/* ---------- tags disclosure (second-class citizen) ---------- */
+.v5 .tags-section{
+  margin-top:6px;
+  border-top:1px solid var(--rule);
+  background:var(--surface);
+}
+.v5 .tags-summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 16px;
+  cursor:pointer;
+}
+.v5 .tags-summary-left{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:11px;
+  letter-spacing:.06em;
+  font-weight:700;
+  color:var(--muted);
+}
+.v5 .tags-summary-left svg{ color:var(--muted); }
+.v5 .tags-chevron{ color:var(--muted); transform:rotate(180deg); }
+
+.v5 .tags-body{ padding:0 16px 14px; }
+.v5 .tags-toggle{
+  display:inline-flex;
+  border:1px solid var(--rule);
+  border-radius:6px;
+  overflow:hidden;
+  margin-bottom:10px;
+}
+.v5 .tags-toggle button{
+  border:0;
+  background:var(--surface);
+  color:var(--muted);
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.04em;
+  padding:5px 10px;
+  cursor:pointer;
+}
+.v5 .tags-toggle button.active{
+  background:var(--accent);
+  color:var(--bg);
+}
+.v5 .tag-chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.v5 .tag-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  height:30px;
+  padding:0 10px;
+  border-radius:15px;
+  background:var(--surface-2);
+  border:1px solid var(--rule);
+  color:var(--muted);
+  font-size:12.5px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.v5 .tag-chip:hover{ background:var(--surface-hover); color:var(--ink); }
+.v5 .tag-chip.selected{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:var(--bg);
+  font-weight:700;
+}
+.v5 .tag-chip .tag-n{
+  font-family:var(--mono);
+  font-size:11px;
+  opacity:.8;
+}
+
+/* ---------- footer ---------- */
+.v5 .footer{
+  flex:0 0 auto;
+  display:flex;
+  gap:8px;
+  padding:12px 16px;
+  border-top:1px solid var(--rule-strong);
+}
+.v5 .btn{
+  flex:1 1 0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  height:40px;
+  border-radius:8px;
+  font-size:14px;
+  font-weight:700;
+  font-family:var(--sans);
+  cursor:pointer;
+  border:1px solid transparent;
+}
+.v5 .btn-primary{
+  background:var(--accent);
+  color:var(--bg);
+}
+.v5 .btn-primary:hover{ opacity:.9; }
+.v5 .btn-secondary{
+  background:var(--surface);
+  border-color:var(--rule);
+  color:var(--ink);
+}
+.v5 .btn-secondary:hover{ background:var(--surface-hover); }
+</style>
+
+<div class="v5 rail">
+  <div class="header">
+    <div class="logo">R</div>
+    <div class="header-text">
+      <div class="app-name">Reel Notes</div>
+      <div class="app-sub">PERSONAL VIDEO DIGEST</div>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <div class="search-field">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search summaries…" />
+    </div>
+  </div>
+
+  <div class="rail-scroll">
+
+    <div class="lenses">
+      <div class="lens-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="lens-count">42</span>
+      </div>
+      <div class="lens-btn active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>
+        <span class="lens-count">11</span>
+      </div>
+      <div class="lens-btn">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15 9 22 9.5 16.5 14.5 18 22 12 18 6 22 7.5 14.5 2 9.5 9 9"/></svg>
+        <span class="lens-count">6</span>
+      </div>
+    </div>
+
+    <div class="unfiled-wrap">
+      <div class="unfiled-row">
+        <div class="unfiled-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+        </div>
+        <div class="unfiled-text">
+          <div class="unfiled-label">Unfiled</div>
+          <div class="unfiled-hint">needs a topic</div>
+        </div>
+        <div class="unfiled-count">9</div>
+        <div class="unfiled-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header">TOPICS</div>
+    <div class="topic-list">
+      <div class="topic-row selected">
+        <div class="topic-dot" style="background:#a85a2a"></div>
+        <div class="topic-label">AI</div>
+        <div class="topic-count">14</div>
+      </div>
+      <div class="topic-row">
+        <div class="topic-dot" style="background:#3f6b46"></div>
+        <div class="topic-label">Money</div>
+        <div class="topic-count">8</div>
+      </div>
+      <div class="topic-row is-hover">
+        <div class="topic-dot" style="background:#8a6a1f"></div>
+        <div class="topic-label">Craft</div>
+        <div class="topic-count">6</div>
+      </div>
+      <div class="topic-row">
+        <div class="topic-dot" style="background:#2e6f8e"></div>
+        <div class="topic-label">Body</div>
+        <div class="topic-count">5</div>
+      </div>
+      <div class="topic-row">
+        <div class="topic-dot" style="background:#6a4a8a"></div>
+        <div class="topic-label">Software</div>
+        <div class="topic-count">4</div>
+      </div>
+      <div class="topic-row">
+        <div class="topic-dot" style="background:#9a3b2f"></div>
+        <div class="topic-label">History</div>
+        <div class="topic-count">3</div>
+      </div>
+    </div>
+
+    <div class="tags-section">
+      <div class="tags-summary">
+        <div class="tags-summary-left">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24L4 3a1 1 0 0 0-1 1l.24 5.59a2 2 0 0 0 .59 1.41l9.58 9.59a2 2 0 0 0 2.83 0l4.35-4.35a2 2 0 0 0 0-2.83z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+          <span>TAGS · 2 selected</span>
+        </div>
+        <svg class="tags-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="tags-body">
+        <div class="tags-toggle">
+          <button class="active">ALL</button>
+          <button>ANY</button>
+        </div>
+        <div class="tag-chips">
+          <div class="tag-chip selected">llm <span class="tag-n">14</span></div>
+          <div class="tag-chip selected">agents <span class="tag-n">9</span></div>
+          <div class="tag-chip">investing <span class="tag-n">7</span></div>
+          <div class="tag-chip">woodworking <span class="tag-n">6</span></div>
+          <div class="tag-chip">interview <span class="tag-n">5</span></div>
+          <div class="tag-chip">rust <span class="tag-n">4</span></div>
+          <div class="tag-chip">sleep <span class="tag-n">3</span></div>
+          <div class="tag-chip">api-design <span class="tag-n">3</span></div>
+          <div class="tag-chip">backtesting <span class="tag-n">2</span></div>
+          <div class="tag-chip">joinery <span class="tag-n">2</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <div class="btn btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add video
+    </div>
+    <div class="btn btn-secondary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24L4 3a1 1 0 0 0-1 1l.24 5.59a2 2 0 0 0 .59 1.41l9.58 9.59a2 2 0 0 0 2.83 0l4.35-4.35a2 2 0 0 0 0-2.83z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+      Manage tags
+    </div>
+  </div>
+</div></div>
+</section>
+</div>
+<p class="hint">Say which number to build. Mixing is fine — e.g. "3, but with 4's Unfiled block".</p>
+</body>
+</html>

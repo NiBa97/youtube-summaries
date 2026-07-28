@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
-import type { Channel, Video } from '../types'
+import type { Video } from '../types'
 
 type Props = {
   video: Video
-  channel: Channel | null
+  /** Topic colour, used for the generated placeholder when no thumbnail loads. */
+  tint?: string
   width?: number | string
   height?: number
   rounded?: number
@@ -21,7 +22,7 @@ function youtubeThumbnailSources(videoId: string): string[] {
   ]
 }
 
-export function VideoThumb({ video, channel, width = 96, height = 54, rounded = 6 }: Props) {
+export function VideoThumb({ video, tint, width = 96, height = 54, rounded = 6 }: Props) {
   const [thumbIndex, setThumbIndex] = useState(0)
   const thumbnailSources = useMemo(() => youtubeThumbnailSources(video.youtubeId), [video.youtubeId])
   const thumbnailSrc = thumbnailSources[thumbIndex]
@@ -35,7 +36,7 @@ export function VideoThumb({ video, channel, width = 96, height = 54, rounded = 
     for (const c of video.id + video.title) h = (h * 31 + c.charCodeAt(0)) | 0
     return Math.abs(h)
   }, [video.id, video.title])
-  const baseColor = channel ? channel.color : '#7a6f5e'
+  const baseColor = tint || '#7a6f5e'
   const variant = seed % 5
 
   let composition: ReactElement

@@ -15,7 +15,7 @@ from youtube_transcript_api._errors import (
     VideoUnavailable,
 )
 
-from .gemini import generate_deck
+from .gemini import NO_TOPIC, classify_video, generate_deck
 from .link_preview import LinkPreviewError, fetch_preview
 from .transcript_format import format_snippets_for_llm
 
@@ -157,6 +157,130 @@ def _deck_validation_error(payload: dict[str, Any]) -> str | None:
     return None
 
 
+class VocabularyTag(BaseModel):
+    name: str
+    count: int = 0
+
+
+class Vocabulary(BaseModel):
+    """The library's controlled vocabulary, sent by the client on every call.
+
+    `tags` must be sorted most-used first - the ordering is what biases the model
+    toward reusing what already exists instead of minting near-duplicates.
+    """
+
+    topics: list[str] = Field(default_factory=list)
+    tags: list[VocabularyTag] = Field(default_factory=list)
+
+
+class TagSuggestion(BaseModel):
+    name: str
+    confidence: float
+
+
+class Classification(BaseModel):
+    topic: str | None = None
+    topic_confidence: float = 0.0
+    tags: list[TagSuggestion] = Field(default_factory=list)
+    new_tags: list[TagSuggestion] = Field(default_factory=list)
+
+
+def normalize_tag(name: str) -> str:
+    """Collapsed identity key. Mirrors `norm` in the Pocketbase `tags` collection
+    and `normalizeTag()` in the frontend - keep all three in sync."""
+    return re.sub(r"[\s_-]+", "", name.strip().lower())
+
+
+def _clamp(value: float) -> float:
+    try:
+        return max(0.0, min(1.0, float(value)))
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _reconcile(raw: dict, vocab: Vocabulary) -> Classification:
+    """Force the model's output back onto the real vocabulary.
+
+    The topic enum is enforced by the response schema, but free-form tags leak
+    out-of-vocabulary names anyway, so every returned tag is matched by norm
+    against the tag table: a hit becomes the canonical existing tag, a miss is
+    demoted to a proposal that needs an explicit click.
+    """
+    canonical = {normalize_tag(t.name): t.name for t in vocab.tags}
+    topic_by_norm = {normalize_tag(t): t for t in vocab.topics}
+
+    topic_raw = str(raw.get("topic") or "").strip()
+    topic = None if topic_raw in ("", NO_TOPIC) else topic_by_norm.get(normalize_tag(topic_raw))
+
+    existing: dict[str, TagSuggestion] = {}
+    proposed: dict[str, TagSuggestion] = {}
+
+    def absorb(items: object) -> None:
+        if not isinstance(items, list):
+            return
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name") or "").strip()
+            if not name:
+                continue
+            norm = normalize_tag(name)
+            if not norm or norm in topic_by_norm:
+                continue  # never shadow a Topic with a same-named tag
+            conf = _clamp(item.get("confidence", 0))
+            if norm in canonical:
+                existing.setdefault(norm, TagSuggestion(name=canonical[norm], confidence=conf))
+            else:
+                proposed.setdefault(norm, TagSuggestion(name=name.lower(), confidence=conf))
+
+    absorb(raw.get("tags"))
+    absorb(raw.get("new_tags"))
+
+    by_conf = lambda s: -s.confidence  # noqa: E731
+    return Classification(
+        topic=topic,
+        topic_confidence=_clamp(raw.get("topic_confidence", 0)) if topic else 0.0,
+        tags=sorted(existing.values(), key=by_conf),
+        new_tags=sorted(proposed.values(), key=by_conf),
+    )
+
+
+class ClassifyRequest(BaseModel):
+    title: str = ""
+    tldr: str = ""
+    body: str = Field(default="", description="Deck text or transcript excerpt to classify from")
+    vocabulary: Vocabulary = Field(default_factory=Vocabulary)
+
+
+def _deck_body(deck: "Deck") -> str:
+    """Classify from the deck rather than the transcript: it is already the
+    distilled subject matter, and it is ~100x cheaper to send."""
+    parts: list[str] = []
+    for block in deck.blocks:
+        if block.type == "claim":
+            parts.append(f"{block.title}. {block.body}")
+        elif block.type == "list":
+            parts.append(f"{block.title}. " + " ".join(block.items))
+        elif block.type == "metric":
+            parts.append(f"{block.value} {block.label}. {block.body or ''}")
+        elif block.type == "quote":
+            parts.append(f'"{block.text}" - {block.attribution}')
+        elif block.type == "timeline":
+            parts.append(f"{block.title}. " + " ".join(i.text for i in block.items))
+    return "\n".join(parts)
+
+
+def _classify(req: ClassifyRequest) -> Classification:
+    raw = classify_video(
+        title=req.title,
+        tldr=req.tldr,
+        body=req.body,
+        topics=req.vocabulary.topics,
+        tags=[(t.name, t.count) for t in req.vocabulary.tags],
+    )
+    return _reconcile(raw, req.vocabulary)
+
+
 class TranscriptResponse(BaseModel):
     video_id: str
     language: str
@@ -277,6 +401,10 @@ class SlidesRequest(BaseModel):
         max_length=1000,
         description="Short custom directive appended to the deck prompt, e.g. 'name every card mentioned'",
     )
+    vocabulary: Vocabulary | None = Field(
+        default=None,
+        description="Existing topics and tags. Omit to skip auto-classification.",
+    )
 
 
 class SlidesResponse(BaseModel):
@@ -288,6 +416,7 @@ class SlidesResponse(BaseModel):
     is_generated: bool
     language_fallback: bool = False
     transcript: list[TranscriptSnippet]
+    classification: Classification | None = None
 
 
 def _fmt_duration(seconds: float) -> str:
@@ -330,6 +459,20 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Deck generation failed: {exc}") from exc
 
+    classification: Classification | None = None
+    if req.vocabulary is not None:
+        # A failed classification must not cost the user their deck - they can
+        # always tag by hand.
+        try:
+            classification = _classify(ClassifyRequest(
+                title=deck.title,
+                tldr=deck.tldr,
+                body=_deck_body(deck),
+                vocabulary=req.vocabulary,
+            ))
+        except Exception as exc:  # noqa: BLE001
+            print(f"classification failed for {video_id}: {exc}")
+
     return SlidesResponse(
         video_id=fetched.video_id,
         deck=deck,
@@ -342,4 +485,15 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
             TranscriptSnippet(text=s.text, start=s.start, duration=s.duration)
             for s in fetched.snippets
         ],
+        classification=classification,
     )
+
+
+@app.post("/classify", response_model=Classification)
+def post_classify(req: ClassifyRequest) -> Classification:
+    """Standalone classification, used by the backfill script and by re-tagging
+    an already-imported video."""
+    try:
+        return _classify(req)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Classification failed: {exc}") from exc

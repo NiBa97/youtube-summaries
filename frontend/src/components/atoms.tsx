@@ -1,6 +1,22 @@
 import type { MouseEvent, ReactNode } from 'react'
 import { Icon, type IconName } from './Icon'
-import type { Channel, Status } from '../types'
+import type { Channel, Status, Tag } from '../types'
+
+export function TopicDot({ topic, size = 12 }: { topic: Tag | null; size?: number }) {
+  return (
+    <div
+      title={topic ? topic.name : 'Unfiled'}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 3,
+        flexShrink: 0,
+        background: topic ? topic.color || 'var(--rule-strong)' : 'transparent',
+        border: topic ? 'none' : '1px dashed var(--rule-strong)',
+      }}
+    />
+  )
+}
 
 export function ChannelDot({ channel, size = 22 }: { channel: Channel | null; size?: number }) {
   if (!channel) {

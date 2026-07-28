@@ -1,0 +1,1288 @@
+<!doctype html>
+<html lang="en" data-theme="paper">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library management — options report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --serif:"Source Serif 4",Georgia,serif;
+  --sans:"Inter",ui-sans-serif,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+[data-theme="paper"]{
+  --bg:#f4ede0; --surface:#faf6ec; --surface-2:#ebe2d0; --surface-hover:#efe6d4;
+  --ink:#2a2419; --muted:#7a6f5e; --rule:rgba(42,36,25,.1); --rule-strong:rgba(42,36,25,.2);
+  --accent:#a85a2a; --good:#3f6b46; --bad:#9a3b2f; --warn:#8a6a1f;
+}
+[data-theme="dark"]{
+  --bg:#15171a; --surface:#1c1f23; --surface-2:#24282d; --surface-hover:#1e2126;
+  --ink:#e8e6e1; --muted:#8a8680; --rule:rgba(232,230,225,.08); --rule-strong:rgba(232,230,225,.18);
+  --accent:#d97757; --good:#7fb289; --bad:#e0806f; --warn:#d4b45c;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px 120px}
+a{color:var(--accent)}
+h1,h2,h3,h4{font-family:var(--serif);font-weight:500;letter-spacing:-.01em;line-height:1.2;margin:0}
+h1{font-size:38px}
+h2{font-size:27px;margin:56px 0 10px;padding-top:20px;border-top:1px solid var(--rule)}
+h3{font-size:20px;margin:30px 0 8px}
+h4{font-size:15px;margin:18px 0 6px;font-family:var(--sans);font-weight:600}
+p{margin:10px 0}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lede{font-family:var(--serif);font-size:18px;color:var(--muted);max-width:70ch}
+code,kbd{font-family:var(--mono);font-size:.87em;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+pre{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;overflow:auto;font-family:var(--mono);font-size:12px;line-height:1.55}
+pre code{background:none;padding:0}
+hr{border:0;border-top:1px solid var(--rule);margin:40px 0}
+
+header.top{padding:48px 0 26px}
+.themebtn{position:fixed;top:14px;right:14px;z-index:50;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
+  background:var(--surface);border:1px solid var(--rule-strong);color:var(--muted);border-radius:20px;padding:7px 13px;cursor:pointer}
+.themebtn:hover{color:var(--ink)}
+
+.toc{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;margin:26px 0 10px}
+.toc a{display:block;padding:11px 13px;background:var(--surface);border:1px solid var(--rule);border-radius:8px;
+  text-decoration:none;color:var(--ink);font-size:13.5px}
+.toc a:hover{border-color:var(--rule-strong);background:var(--surface-hover)}
+.toc a b{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.1em;margin-bottom:3px}
+
+table{border-collapse:collapse;width:100%;font-size:13px;margin:14px 0}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+tbody tr:hover{background:var(--surface-hover)}
+.tbl-scroll{overflow-x:auto;border:1px solid var(--rule);border-radius:10px;background:var(--surface)}
+.tbl-scroll table{margin:0;min-width:760px}
+.tbl-scroll th{background:var(--surface-2)}
+
+.opt{border:1px solid var(--rule);background:var(--surface);border-radius:12px;padding:0;margin:26px 0;overflow:hidden}
+.opt-head{padding:18px 22px;border-bottom:1px solid var(--rule);display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.opt-num{font-family:var(--mono);font-size:11px;color:#fff;background:var(--accent);border-radius:6px;
+  width:26px;height:26px;display:grid;place-items:center;flex:none;margin-top:2px}
+.opt-head h3{margin:0}
+.opt-body{padding:6px 22px 22px}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.badge{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 8px;border-radius:20px;border:1px solid var(--rule-strong);color:var(--muted)}
+.badge.rec{border-color:var(--accent);color:var(--accent)}
+.badge.eff-s{color:var(--good);border-color:var(--good)}
+.badge.eff-m{color:var(--warn);border-color:var(--warn)}
+.badge.eff-l{color:var(--bad);border-color:var(--bad)}
+
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+@media(max-width:760px){.pc{grid-template-columns:1fr}}
+.pc>div{background:var(--bg);border:1px solid var(--rule);border-radius:9px;padding:12px 15px}
+.pc h5{margin:0 0 7px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+.pros h5{color:var(--good)} .cons h5{color:var(--bad)}
+.pc ul{margin:0;padding-left:17px;font-size:13.3px;line-height:1.55}
+.pc li{margin:5px 0}
+.verdict{border-left:3px solid var(--accent);background:var(--bg);padding:11px 15px;border-radius:0 8px 8px 0;font-size:13.5px;margin-top:14px}
+.verdict b{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:3px}
+
+.mock{border:1px solid var(--rule-strong);border-radius:11px;overflow:hidden;background:var(--bg);margin:16px 0 4px}
+.mock-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface-2);border-bottom:1px solid var(--rule)}
+.mock-bar .dots{display:flex;gap:5px}
+.mock-bar .dots i{width:8px;height:8px;border-radius:50%;background:var(--rule-strong);display:block}
+.mock-bar span{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.mock-hint{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin:0 0 14px;padding-left:2px}
+.mock-hint::before{content:"▸ ";color:var(--accent)}
+
+/* ---- app-ish primitives used inside mockups ---- */
+.app{display:grid;min-height:400px}
+.rail{background:var(--bg);border-right:1px solid var(--rule);padding:12px 10px;overflow:auto}
+.rail-h{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;color:var(--muted);padding:12px 8px 6px;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
+.rail-i{padding:6px 9px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:9px;font-size:12.8px;user-select:none}
+.rail-i:hover{background:var(--surface-hover)}
+.rail-i.on{background:var(--surface-2)}
+.rail-i .ct{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rail-i .dot{width:9px;height:9px;border-radius:3px;flex:none}
+.list{overflow:auto;padding:8px;background:var(--bg)}
+.row{padding:11px 12px;border-radius:8px;cursor:pointer;border-left:2px solid transparent;display:grid;grid-template-columns:74px 1fr;gap:11px}
+.row:hover{background:var(--surface-hover)}
+.row.on{background:var(--surface-2);border-left-color:var(--accent)}
+.thumb{width:74px;height:42px;border-radius:5px;background:var(--surface-2);display:grid;place-items:center;
+  font-family:var(--mono);font-size:9px;color:var(--muted);overflow:hidden;flex:none;border:1px solid var(--rule)}
+.row-meta{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:flex;gap:7px;align-items:center;margin-bottom:3px}
+.row-title{font-family:var(--serif);font-size:14px;line-height:1.3;margin-bottom:5px}
+.row-tags{display:flex;gap:5px;flex-wrap:wrap}
+.pill{font-family:var(--mono);font-size:9.5px;letter-spacing:.03em;padding:2px 7px;border-radius:20px;
+  background:var(--surface-2);color:var(--muted);border:1px solid transparent;white-space:nowrap}
+.pill.on{background:var(--accent);color:#fff}
+.pill.topic{border-color:var(--rule-strong);background:transparent}
+.pill.new{border:1px dashed var(--accent);color:var(--accent);background:transparent}
+.pill.click{cursor:pointer}
+.pill.click:hover{border-color:var(--rule-strong)}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:13px}
+
+.btn{font-family:var(--sans);font-size:12.5px;padding:6px 12px;border-radius:7px;cursor:pointer;
+  border:1px solid var(--rule-strong);background:var(--surface);color:var(--ink)}
+.btn:hover{background:var(--surface-hover)}
+.btn.acc{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.acc:hover{filter:brightness(1.08)}
+.btn.sm{font-size:11px;padding:4px 9px}
+.btn.gh{background:transparent;border-color:transparent;color:var(--muted)}
+.inp{width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--rule-strong);border-radius:7px;
+  outline:none;font-family:var(--sans);font-size:12.5px;color:var(--ink)}
+.inp:focus{border-color:var(--accent)}
+select.inp{cursor:pointer}
+.fieldlbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:5px}
+
+.dlg{max-width:520px;margin:20px auto;background:var(--surface);border:1px solid var(--rule);border-radius:11px;
+  box-shadow:0 18px 48px rgba(0,0,0,.16);overflow:hidden}
+.dlg-h{padding:14px 18px;border-bottom:1px solid var(--rule)}
+.dlg-h .t{font-family:var(--serif);font-size:16px}
+.dlg-b{padding:16px 18px;display:flex;flex-direction:column;gap:13px}
+.dlg-f{padding:11px 18px;border-top:1px solid var(--rule);background:var(--bg);display:flex;gap:8px;justify-content:flex-end}
+.note{font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1.5}
+
+.conf{height:3px;border-radius:2px;background:var(--rule-strong);overflow:hidden;width:44px;flex:none}
+.conf i{display:block;height:100%;background:var(--accent)}
+
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px;margin:10px 0}
+.kv dt{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding-top:3px}
+.kv dd{margin:0}
+
+.callout{border:1px solid var(--rule-strong);background:var(--surface);border-radius:10px;padding:14px 18px;margin:18px 0}
+.callout .eyebrow{margin-bottom:5px}
+.src{font-size:12px;color:var(--muted);font-family:var(--mono);word-break:break-all}
+ul.tight{padding-left:18px;font-size:14px}
+ul.tight li{margin:6px 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media(max-width:820px){.two{grid-template-columns:1fr}}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--muted);padding:8px 12px;border-top:1px solid var(--rule);background:var(--surface)}
+.legend b{color:var(--ink);font-weight:500}
+</style>
+</head>
+<body>
+<button class="themebtn" id="themebtn">DARK</button>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">Reel Notes · design report · 27 Jul 2026</div>
+  <h1>Six ways to give the library a spine</h1>
+  <p class="lede">Right now every video lands in one undifferentiated list. This report lays out six organizing models — from "do almost nothing" to "no vocabulary at all" — with honest trade-offs, the Pocketbase schema each needs, and a clickable mock-up of each so you can feel it before you commit.</p>
+</header>
+
+<div class="toc">
+  <a href="#now"><b>00</b>Where you are now</a>
+  <a href="#compare"><b>—</b>At a glance</a>
+  <a href="#o1"><b>01</b>Flat list, better filters</a>
+  <a href="#o2"><b>02</b>Shelves (one home each)</a>
+  <a href="#o3"><b>03</b>Flat tags + AI suggest</a>
+  <a href="#o4"><b>04</b>Two-tier: Topic + tags</a>
+  <a href="#o5"><b>05</b>Smart views, zero filing</a>
+  <a href="#o6"><b>06</b>Semantic clusters</a>
+  <a href="#autotag"><b>07</b>The auto-tagger itself</a>
+  <a href="#hygiene"><b>08</b>Tag hygiene &amp; backfill</a>
+  <a href="#research"><b>09</b>What the field does</a>
+  <a href="#rec"><b>10</b>Recommendation</a>
+</div>
+
+<!-- ============================================ -->
+<h2 id="now">00 · Where you actually are</h2>
+<p>Facts pulled from the codebase, not assumptions — these constrain every option below.</p>
+
+<dl class="kv">
+  <dt>Schema</dt><dd><code>videos</code> has <code>url, video_id, title, status, slides_html, deck, transcript, error</code>. <b>There is no tags field, no channel field, no collection field.</b></dd>
+  <dt>The rail</dt><dd><code>FilterRail.tsx</code> renders a <code>SUBSCRIPTIONS</code> header over <code>CHANNELS</code> from <code>src/data.ts</code> — one hardcoded sample channel. It filters on <code>video.channelId</code>, which <code>recordToVideo()</code> always sets to <code>null</code>. So the rail is decorative today.</dd>
+  <dt>Dead fields</dt><dd><code>recordToVideo()</code> hardcodes <code>tags: []</code>, <code>starred: false</code>, <code>status: 'unread'</code>, <code>readingTime: 0</code>. The UI already renders tag pills and star buttons — the wiring is what's missing, not the components.</dd>
+  <dt>Filtering</dt><dd>One <code>useMemo</code> in <code>App.tsx</code>: substring match on title / tldr / tags, plus channel. Sort is fixed to <code>publishedAt</code> desc.</dd>
+  <dt>The AI hook</dt><dd><code>gemini.py</code> already does one <code>generate_content</code> call per add with <code>response_mime_type="application/json"</code>. Adding classification is either one extra field on the deck schema or one extra cheap call. The transcript and the generated <code>tldr</code> are both sitting right there.</dd>
+</dl>
+
+<div class="callout">
+  <div class="eyebrow">The load-bearing observation</div>
+  <p style="margin:0">Because <code>tags</code> doesn't exist in the DB yet, <b>every option below costs a migration anyway.</b> There's no "cheap because it reuses what's there" option — so pick on merit, not on perceived migration cost. The real cost differences are in UI surface area and in how much ongoing curation each model demands from you.</p>
+</div>
+
+<!-- ============================================ -->
+<h2 id="compare">At a glance</h2>
+<div class="tbl-scroll">
+<table>
+<thead><tr><th>#</th><th>Model</th><th>New PB collections</th><th>Effort</th><th>Ongoing curation</th><th>Handles multi-topic video</th><th>Breaks at scale?</th></tr></thead>
+<tbody>
+<tr><td>01</td><td>Flat list + filters</td><td>none (fields only)</td><td>S</td><td>none</td><td>n/a</td><td>~150 videos</td></tr>
+<tr><td>02</td><td>Shelves</td><td><code>shelves</code></td><td>S–M</td><td>low</td><td>badly — forced single home</td><td>when shelves &gt; ~15</td></tr>
+<tr><td>03</td><td>Flat tags + AI suggest</td><td><code>tags</code></td><td>M</td><td>medium — tag sprawl needs pruning</td><td>well</td><td>when tags &gt; ~80 without hygiene</td></tr>
+<tr><td>04</td><td>Topic (closed) + tags (open)</td><td><code>topics</code>, <code>tags</code></td><td>M</td><td>low — sprawl is fenced into tier 2</td><td>well</td><td>degrades gracefully</td></tr>
+<tr><td>05</td><td>Smart views over auto-tags</td><td><code>tags</code>, <code>views</code></td><td>M–L</td><td>very low, but debugging views is a skill</td><td>well</td><td>view list itself becomes the mess</td></tr>
+<tr><td>06</td><td>Semantic clusters</td><td><code>embeddings</code> (+ pgvector-ish workaround)</td><td>L</td><td>none — but no control either</td><td>fuzzily</td><td>clusters churn as library grows</td></tr>
+</tbody>
+</table>
+</div>
+<div class="mock-hint">Effort is <b>my</b> estimate in this codebase: S ≈ an afternoon, M ≈ a day or two, L ≈ a week plus an infra decision.</div>
+
+<!-- ============================================ -->
+<h2 id="o1">01 · Flat list, better filters</h2>
+<div class="opt">
+  <div class="opt-head">
+    <div class="opt-num">01</div>
+    <div style="flex:1;min-width:220px">
+      <h3>Do almost nothing, but do it well</h3>
+      <div class="badges"><span class="badge eff-s">effort S</span><span class="badge">no AI</span><span class="badge">control option</span></div>
+    </div>
+  </div>
+  <div class="opt-body">
+    <p>Keep the single list. Wire up the fields the UI already draws but the DB never fills: <code>starred</code>, a real read <code>status</code>, sort options, and a search box that actually searches deck body text, not just the title. The rail stops pretending to be subscriptions and becomes a set of fixed lenses: <b>Inbox / Unread / Starred / Archive / All</b>.</p>
+    <p>This is the honest baseline. It is worth taking seriously because a lot of "I can't find anything" is really "I have no way to mark something as dealt with", and that's a status problem, not a taxonomy problem.</p>
+
+    <div class="pc">
+      <div class="pros"><h5>Pros</h5><ul>
+        <li>Ships in an afternoon; two new fields, zero new collections.</li>
+        <li>Zero filing tax — you never make a categorization decision.</li>
+        <li>Solves the most common real complaint: "which of these have I already dealt with?"</li>
+        <li>Nothing to migrate away from later. Every other option builds <em>on top</em> of this, not instead of it.</li>
+      </ul></div>
+      <div class="cons"><h5>Cons</h5><ul>
+        <li>Doesn't touch the actual stated problem — unrelated topics still interleave.</li>
+        <li>Search only helps when you already know what you're looking for. Browsing stays impossible.</li>
+        <li>At ~150 videos the archive is a wall of text you never revisit.</li>
+        <li>No answer to "show me everything I've saved about X".</li>
+      </ul></div>
+    </div>
+    <div class="verdict"><b>Verdict</b>Not sufficient alone — but you should do the status/star/sort part <em>regardless</em> of which option below you pick. It's a prerequisite, not a competitor.</div>
+
+    <div class="mock"><div class="mock-bar"><div class="dots"><i></i><i></i><i></i></div><span>Mock 01 — lenses instead of subscriptions</span></div>
+      <div id="m1" class="app" style="grid-template-columns:180px 1fr"></div>
+      <div class="legend"><span><b>Try:</b> click a lens, click a column header to re-sort, click ★ on a row.</span></div>
+    </div>
+    <div class="mock-hint">Note how the rail stops lying: every entry has a live count and actually filters.</div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<h2 id="o2">02 · Shelves — every video gets exactly one home</h2>
+<div class="opt">
+  <div class="opt-head">
+    <div class="opt-num">02</div>
+    <div style="flex:1;min-width:220px">
+      <h3>Folders, essentially</h3>
+      <div class="badges"><span class="badge eff-s">effort S–M</span><span class="badge">AI picks the shelf</span><span class="badge">single-parent</span></div>
+    </div>
+  </div>
+  <div class="opt-body">
+    <p>A <code>shelves</code> collection; <code>videos.shelf</code> is a single relation. The rail becomes the shelf list. On add, Gemini gets the list of existing shelf names and picks one, or answers <code>null</code> → the video lands in <b>Unshelved</b> and you drag it somewhere. Optionally one level of nesting (<code>AI / Agents</code>).</p>
+    <pre><code>// migration sketch
+shelves:  name (text, unique)  ·  color (text)  ·  sort (number)
+videos:   + shelf (relation → shelves, maxSelect 1, optional)</code></pre>
+
+    <div class="pc">
+      <div class="pros"><h5>Pros</h5><ul>
+        <li>The mental model everyone already has. No explanation needed, ever.</li>
+        <li>Cheapest possible AI task: pick one label from a closed list of ~10. Near-zero hallucination surface.</li>
+        <li>Rail navigation is obvious and stable — the same eight things are always in the same place.</li>
+        <li>"Unshelved" is a natural inbox that self-empties as you file.</li>
+        <li>Counts per shelf give you an honest picture of what you actually watch.</li>
+      </ul></div>
+      <div class="cons"><h5>Cons</h5><ul>
+        <li><b>The killer:</b> a video about using LLMs for personal finance has one home and it's wrong. This is the documented reason folder systems fail for personal libraries.</li>
+        <li>You will start creating shelves to resolve ambiguity ("AI-Finance") and end up with 25 shelves and a new problem.</li>
+        <li>No cross-cutting axes: you can't ask "everything that's a conference talk" across shelves.</li>
+        <li>Re-filing is manual and nobody ever does it. Mistakes calcify.</li>
+        <li>Shelf granularity is a decision you have to get right early and can't cheaply revise.</li>
+      </ul></div>
+    </div>
+    <div class="verdict"><b>Verdict</b>Tempting for its simplicity, and genuinely fine if your topics are truly disjoint. Given you described "completely different topics" that <em>might</em> actually hold — but the first crossover video will annoy you permanently.</div>
+
+    <div class="mock"><div class="mock-bar"><div class="dots"><i></i><i></i><i></i></div><span>Mock 02 — shelves rail + drag-to-file</span></div>
+      <div id="m2" class="app" style="grid-template-columns:190px 1fr"></div>
+      <div class="legend"><span><b>Try:</b> click a shelf. Then open <b>Unshelved</b> and use the ⇄ button on a row to re-file it.</span></div>
+    </div>
+    <div class="mock-hint">Watch the <b>Unshelved</b> count. The one crossover video in this dataset is deliberately hard to place — try it.</div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<h2 id="o3">03 · Flat tags with AI suggest-then-confirm</h2>
+<div class="opt">
+  <div class="opt-head">
+    <div class="opt-num">03</div>
+    <div style="flex:1;min-width:220px">
+      <h3>Many tags per video, you confirm at add time</h3>
+      <div class="badges"><span class="badge eff-m">effort M</span><span class="badge">AI suggests</span><span class="badge">multi-label</span></div>
+    </div>
+  </div>
+  <div class="opt-body">
+    <p>A <code>tags</code> collection; <code>videos.tags</code> is a multi relation. On add, the backend sends Gemini the <b>existing tag vocabulary with usage counts</b> plus the freshly generated <code>tldr</code>, and asks for 2–4 tags — reusing existing ones wherever they fit and proposing new ones only when nothing does. The add dialog shows the suggestions as chips: existing ones pre-selected, <em>newly invented</em> ones visually distinct and requiring an explicit click before they're created.</p>
+    <p>That last distinction is the whole ballgame. Silent tag creation is how you get <code>llm</code>, <code>LLMs</code>, and <code>large-language-models</code> in the same library by week three.</p>
+    <pre><code>tags:   name (text, unique)  ·  slug (text, unique)  ·  color (text)
+videos: + tags (relation → tags, maxSelect 0 = unlimited)</code></pre>
+
+    <div class="pc">
+      <div class="pros"><h5>Pros</h5><ul>
+        <li>Multi-topic videos are represented honestly — no forced single home.</li>
+        <li>Cross-cutting queries work: "interviews" ∩ "finance".</li>
+        <li>Vocabulary grows organically from what you actually watch instead of from a taxonomy you guessed at on day one.</li>
+        <li>Suggest-then-confirm keeps you in the loop at exactly the moment you have the most context — right after adding.</li>
+        <li>Cheap to retrofit: run the same tagger over your existing library in a batch job.</li>
+      </ul></div>
+      <div class="cons"><h5>Cons</h5><ul>
+        <li><b>Tag sprawl.</b> Without hygiene tools you land at 90 tags, 60 of which are used once. This is the single most documented failure mode of personal tagging systems.</li>
+        <li>Granularity drift: the model tags one video <code>software</code> and the next <code>rust-async-runtimes</code>. Nothing enforces a consistent altitude.</li>
+        <li>A flat tag list in the rail becomes unbrowsable past ~40 tags — you need a tag cloud, search, or sorting by count.</li>
+        <li>Adds a confirmation step to every add. Small, but it's friction you'll feel on video 200.</li>
+        <li>No "default view" — with no hierarchy the library has no shape when you open it cold.</li>
+      </ul></div>
+    </div>
+    <div class="verdict"><b>Verdict</b>The right primitive, but on its own it lacks a backbone. It needs either hygiene tooling (§08) or a second tier (option 04) to stay usable past a hundred videos.</div>
+
+    <div class="mock"><div class="mock-bar"><div class="dots"><i></i><i></i><i></i></div><span>Mock 03a — add dialog with AI suggestions</span></div>
+      <div id="m3a" style="padding:6px 0 14px"></div>
+      <div class="legend"><span><b>Try:</b> click <b>Analyse</b> to simulate the Gemini round-trip, then toggle chips. <b>Dashed</b> = brand-new tag, needs an explicit click.</span></div>
+    </div>
+    <div class="mock" style="margin-top:20px"><div class="mock-bar"><div class="dots"><i></i><i></i><i></i></div><span>Mock 03b — tag rail with AND/OR filtering</span></div>
+      <div id="m3b" class="app" style="grid-template-columns:200px 1fr"></div>
+      <div class="legend"><span><b>Try:</b> select two tags and flip <b>ANY / ALL</b>. Sort the rail by count vs. alphabetically.</span></div>
+    </div>
+    <div class="mock-hint">The rail here is already showing strain at 14 videos / 18 tags. Imagine 300 / 90.</div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<h2 id="o4">04 · Two-tier — one closed Topic, plus open tags</h2>
+<div class="opt">
+  <div class="opt-head">
+    <div class="opt-num">04</div>
+    <div style="flex:1;min-width:220px">
+      <h3>A fixed backbone with a soft surface</h3>
+      <div class="badges"><span class="badge rec">my recommendation</span><span class="badge eff-m">effort M</span><span class="badge">AI does both tiers</span></div>
+    </div>
+  </div>
+  <div class="opt-body">
+    <p>Two distinct vocabularies with different rules:</p>
+    <ul class="tight">
+      <li><b>Topic</b> — a <em>closed</em> list of ~6–10 broad areas you define once (AI, Money, Craft, Body, History…). Every video gets exactly one. <b>The model may not invent Topics</b>; if nothing fits it must return <code>null</code> and the video goes to <b>Unsorted</b>. This gives the rail a stable, browsable shape forever.</li>
+      <li><b>Tags</b> — an <em>open</em> multi-label set. The model reuses existing tags freely and may propose new ones, subject to your confirmation. This is where specificity and cross-cutting axes live.</li>
+    </ul>
+    <p>The key insight: the two failure modes are opposite, and separating the tiers cancels them out. Folders fail because they're too rigid for a multi-topic item; tags fail because nothing constrains their growth. Here rigidity is applied only where it's cheap (a handful of stable Topics you rarely revisit) and freedom only where it's useful (specific tags that can be pruned without breaking navigation).</p>
+    <pre><code>// one table, two kinds — see §09 for why this beats two separate collections
+tags:   name (text, unique) · norm (text, unique) · kind ('topic'|'tag') · color · sort
+videos: + topic (relation → tags, maxSelect 1, optional)
+        + tags  (relation → tags, maxSelect 0)
+        + tag_source (json)   // { "llm": "ai", "investing": "human", ... }</code></pre>
+    <p>Prompt-side, this is one call returning <code>{"topic": "AI", "topic_confidence": 0.9, "tags": [...], "new_tags": [...]}</code> where <code>topic</code> is constrained by an enum in the response schema — Gemini's structured output can enforce that mechanically, so the closed list is guaranteed, not merely requested.</p>
+
+    <div class="pc">
+      <div class="pros"><h5>Pros</h5><ul>
+        <li>The rail is permanently browsable: eight entries, always the same, always in the same order. Cold-open shape.</li>
+        <li>Tag sprawl becomes harmless — sprawl in tier 2 doesn't degrade navigation, it only degrades a secondary filter you can prune whenever.</li>
+        <li>Multi-topic videos still work: crossover gets <code>Topic: AI</code> + <code>tags: [investing, agents]</code> and is findable from both directions.</li>
+        <li>The closed Topic list is enforceable at the API level via a response-schema enum. No hallucinated Topics, structurally.</li>
+        <li>Granularity drift is solved by construction: the model can't answer a Topic question with a niche label.</li>
+        <li>Cheap escape hatch — if a tag hits 20 uses, promote it to a Topic. The system tells you when your taxonomy is wrong.</li>
+      </ul></div>
+      <div class="cons"><h5>Cons</h5><ul>
+        <li>Two concepts to explain and two UI surfaces to build. More code than 02 or 03 alone.</li>
+        <li>You have to seed the Topic list up front, and getting it wrong early is annoying (though re-topicking 40 videos is one batch job).</li>
+        <li>The "exactly one Topic" rule reintroduces a small amount of the folder problem — the crossover video's Topic is still a judgement call, it's just no longer the <em>only</em> signal.</li>
+        <li>Two relations means two <code>expand</code> params on every list query. Minor, but the PB queries get chattier.</li>
+        <li>Overkill if your library stays under ~50 videos.</li>
+      </ul></div>
+    </div>
+    <div class="verdict"><b>Verdict</b>Best effort-to-durability ratio for what you described. You get the browsable shape of folders and the honesty of tags, and the failure mode of each is contained by the other. It's also the only option where the system tells you your own taxonomy is drifting.</div>
+
+    <div class="mock"><div class="mock-bar"><div class="dots"><i></i><i></i><i></i></div><span>Mock 04a — two-tier rail</span></div>
+      <div id="m4a" class="app" style="grid-template-columns:210px 1fr"></div>
+      <div class="legend"><span><b>Try:</b> pick a Topic, then narrow with tags inside it. Note the tag list re-scopes to the Topic you're in.</span></div>
+    </div>
+    <div class="mock" style="margin-top:20px"><div class="mock-bar"><div class="dots"><i></i><i></i><i></i></div><span>Mock 04b — add dialog, both tiers</span></div>
+      <div id="m4b" style="padding:6px 0 14px"></div>
+      <div class="legend"><span><b>Try:</b> <b>Analyse</b>, then change the Topic in the select — it's a closed list, you cannot type a new one. Tags below stay free-form.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<h2 id="o5">05 · Smart views — auto-tag silently, never file anything</h2>
+<div class="opt">
+  <div class="opt-head">
+    <div class="opt-num">05</div>
+    <div style="flex:1;min-width:220px">
+      <h3>The library organizes itself; you write the queries</h3>
+      <div class="badges"><span class="badge eff-m">effort M–L</span><span class="badge">AI applies silently</span><span class="badge">zero filing</span></div>
+    </div>
+  </div>
+  <div class="opt-body">
+    <p>Tags get applied automatically with no confirmation step at all — you never see the add dialog do anything except succeed. Organization happens <em>after</em> the fact, through saved views: a <code>views</code> collection storing a filter tree (<code>tags contains X AND duration &gt; 20m AND status = unread</code>). The rail lists your views. Add a view whenever a need arises; delete it when it stops being useful.</p>
+    <p>This is the iTunes smart-playlist / Gmail-filter model applied to a video library. The bet is that <em>retrieval</em> is the real need and <em>filing</em> is a cost you pay for nothing.</p>
+
+    <div class="pc">
+      <div class="pros"><h5>Pros</h5><ul>
+        <li>Truly zero friction at add time — paste URL, done. Nothing else in this report is this frictionless.</li>
+        <li>Views are cheap and disposable. Wrong view? Delete it. No data was moved, nothing broke.</li>
+        <li>One video can appear in any number of views without contradiction.</li>
+        <li>Composes with everything: views work over Topics <em>and</em> tags if you also do 02/04.</li>
+        <li>Retroactive by nature — a new view instantly includes old videos, no re-filing pass.</li>
+      </ul></div>
+      <div class="cons"><h5>Cons</h5><ul>
+        <li><b>Silent auto-apply means silent wrong tags.</b> You only discover the mistagging when a view mysteriously has the wrong things in it, long after you've lost the context to fix it.</li>
+        <li>You're now maintaining query logic, not a library. That's a different and less pleasant kind of work.</li>
+        <li>A filter-builder UI is the most expensive thing in this report to build well.</li>
+        <li>Views drift out of sync with a growing vocabulary: a view pinned to <code>llm</code> silently misses everything the model later tagged <code>agents</code>.</li>
+        <li>No browsing affordance — you can't discover what's in your library, only query things you already suspect are there.</li>
+        <li>Contradicts your stated preference for explicit choice at the moment of action.</li>
+      </ul></div>
+    </div>
+    <div class="verdict"><b>Verdict</b>Excellent as a <em>layer</em> on top of 03 or 04 — "saved filters" is a great feature. Bad as the <em>only</em> organizing model, because silent tagging with no review point is exactly the setup that produces a quietly-wrong library.</div>
+
+    <div class="mock"><div class="mock-bar"><div class="dots"><i></i><i></i><i></i></div><span>Mock 05 — smart view builder with live count</span></div>
+      <div id="m5" style="padding:14px"></div>
+      <div class="legend"><span><b>Try:</b> add rule rows, flip ALL/ANY, watch the match count update live. Then <b>Save view</b> and it appears in the rail.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<h2 id="o6">06 · Semantic clusters — no vocabulary at all</h2>
+<div class="opt">
+  <div class="opt-head">
+    <div class="opt-num">06</div>
+    <div style="flex:1;min-width:220px">
+      <h3>Let embeddings decide the shape</h3>
+      <div class="badges"><span class="badge eff-l">effort L</span><span class="badge">fully automatic</span><span class="badge">opaque</span></div>
+    </div>
+  </div>
+  <div class="opt-body">
+    <p>Embed each deck's <code>tldr</code> + title (Gemini has an embedding endpoint), store the vector, cluster periodically, and have the model name each cluster. The rail shows clusters. No tags, no topics, no decisions. Additionally: "more like this" becomes a first-class navigation move, and semantic search replaces substring search — you'd find the electricity video by searching "how power actually flows", which today returns nothing.</p>
+
+    <div class="pc">
+      <div class="pros"><h5>Pros</h5><ul>
+        <li>Genuinely zero curation. Nothing to name, confirm, prune, or merge.</li>
+        <li>Semantic search is a real, large upgrade over the current substring match — arguably the best single retrieval improvement available.</li>
+        <li>"Show me more like this one" is a navigation mode none of the other options give you.</li>
+        <li>No vocabulary means no vocabulary drift, no synonym problem, no granularity problem.</li>
+      </ul></div>
+      <div class="cons"><h5>Cons</h5><ul>
+        <li><b>Clusters move under you.</b> Add five videos and yesterday's "Systems programming" cluster is now split in two with different names. Navigation you can't build a habit around.</li>
+        <li>Pocketbase has no vector index. You'd store vectors as JSON and brute-force cosine in Python — fine at 300 videos, a real problem later, and it's a hack either way.</li>
+        <li>You cannot express intent. There's no way to say "I want these two things kept apart" because there's no handle to grab.</li>
+        <li>Cluster names are model-generated and often bland or wrong; renaming them re-introduces the vocabulary you were avoiding.</li>
+        <li>Most expensive option, and the least aligned with "I want to be able to manage this myself".</li>
+        <li>Needs a re-clustering job — new infra (cron, or on-add incremental assignment with periodic full rebuild).</li>
+      </ul></div>
+    </div>
+    <div class="verdict"><b>Verdict</b>Don't make this your organizing model. <em>Do</em> steal the semantic-search half of it later as a standalone feature — it's independently valuable and doesn't require clustering at all.</div>
+
+    <div class="mock"><div class="mock-bar"><div class="dots"><i></i><i></i><i></i></div><span>Mock 06 — auto-clusters, and what happens when you add videos</span></div>
+      <div id="m6" style="padding:14px"></div>
+      <div class="legend"><span><b>Try:</b> hit <b>Add 4 videos &amp; re-cluster</b> twice and watch the cluster names and groupings rearrange.</span></div>
+    </div>
+    <div class="mock-hint">The instability shown here is the honest core of the objection — it's simulated, but it is the real behaviour of k-means-style clustering on a growing corpus.</div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<h2 id="autotag">07 · The auto-tagger itself</h2>
+<p>Independent of which model you pick, the classifier has the same design questions. These are the ones that decide whether it feels magic or feels like a mess.</p>
+
+<h3>Where it runs</h3>
+<p>Extend the existing deck call rather than adding a second one. <code>generate_deck()</code> already gets the full transcript and returns JSON; adding <code>topic</code> and <code>tags</code> to the response schema costs no extra latency and no extra API call. The only change is that the backend now needs to know the current vocabulary, so <code>POST /slides</code> takes an extra input — either the frontend sends the vocab it already has loaded, or the backend reads it from Pocketbase directly.</p>
+<p>Sending the vocab from the frontend is the smaller change and keeps the backend stateless. Reading from PB in the backend is the better long-term shape, because it's what a background re-tag job would need anyway.</p>
+
+<h3>Constrain the model mechanically, not politely</h3>
+<p>Gemini's structured output supports enums. For the closed Topic tier, don't write "please pick from this list" in the prompt and hope — put the list in the response schema as an enum. Then a hallucinated Topic is impossible rather than unlikely. Tags stay a free string array, but the prompt should rank reuse over invention explicitly:</p>
+<p>This version already incorporates the research in §09 — the usage-sorted ordering and tie-break, the 3–5 cap with an allowed empty result, and the video-specific boilerplate clause:</p>
+<pre><code>EXISTING TAGS (sorted by usage, most-used first):
+  llm×14  agents×9  investing×7  woodworking×6  interview×5  rust×4 …
+
+Rules:
+  1. Prefer an existing tag whenever it is a reasonable fit. Reuse beats precision.
+  2. When two existing tags fit equally well, pick the one earlier in the list.
+  3. Match the exact spelling and casing of existing tags.
+  4. Return 3-5 tags. Fewer is fine. An empty array is fine.
+  5. Propose a new tag ONLY if no existing tag covers a *central* theme of the
+     video — not a passing mention. Put those in "new_tags", never in "tags".
+  6. New tags: lowercase, singular, hyphenated, one or two words.
+  7. Tag the subject matter only — not sponsor reads, intros, outros,
+     "like and subscribe", or asides the video doesn't actually pursue.
+  8. Return each tag with a confidence 0-1.</code></pre>
+<p>Rule 1 is doing most of the work. Left to itself the model optimizes for descriptive accuracy, which produces a fresh perfectly-apt tag for every video and a vocabulary of size <em>n</em>. You have to explicitly tell it that consistency is worth more than precision. Rule 7 exists because production taggers all need an equivalent — Karakeep's version refuses to tag cookie walls and CAPTCHA pages; yours has to refuse the sponsor segment.</p>
+
+<h4>Then don't trust any of it</h4>
+<p>Measured out-of-vocabulary leakage under a hard "only use these tags" constraint runs around <b>10%</b>. So after the call: intersect the returned <code>tags</code> against the actual tag table, apply the members, and route the non-members into <code>new_tags</code> where they need a click. The prompt is a strong prior, not an enforcement mechanism — the only genuinely enforced part is the Topic enum, because that one is in the response schema.</p>
+
+<h3>Silent vs. suggest-then-confirm</h3>
+<div class="two">
+<div>
+<h4>Confirm everything (option 03/04 default)</h4>
+<p style="font-size:13.5px">One extra click per add. In exchange, wrong tags never enter the library, and you build an accurate mental model of your own vocabulary because you see it every time.</p>
+</div>
+<div>
+<h4>Threshold hybrid</h4>
+<p style="font-size:13.5px">Auto-apply existing tags above ~0.75 confidence; show anything lower as an unselected suggestion; <em>always</em> require an explicit click for a brand-new tag. Most adds become zero-click, and the one action that permanently grows your vocabulary stays deliberate.</p>
+</div>
+</div>
+<div class="callout">
+  <div class="eyebrow">The asymmetry that matters</div>
+  <p style="margin:0">Applying a wrong existing tag is a small, reversible error — one video is slightly misfiled. Creating a redundant new tag is a permanent, compounding error — it splits a concept in two forever and every future video has to pick a side. <b>Gate tag creation hard; be relaxed about tag application.</b> That asymmetry should drive the whole UX.</p>
+</div>
+
+<div class="mock"><div class="mock-bar"><div class="dots"><i></i><i></i><i></i></div><span>Mock 07 — the same suggestion set under three policies</span></div>
+  <div id="m7" style="padding:14px"></div>
+  <div class="legend"><span><b>Try:</b> switch policy and see which chips end up applied, and how many clicks each costs.</span></div>
+</div>
+
+<!-- ============================================ -->
+<h2 id="hygiene">08 · Tag hygiene &amp; backfilling what you already have</h2>
+<p>Any tag-based option needs these three things or it rots. They're small individually, and skipping them is the most common way tagging systems die.</p>
+
+<ul class="tight">
+<li><b>Merge &amp; rename.</b> With a <code>tags</code> collection this is trivial — rename is one record update and every video follows automatically; merge is "repoint relations from A to B, delete A". Do this as a relation collection rather than a JSON string array precisely so you get this for free. <em>This is the single strongest argument against storing tags as a JSON array on <code>videos</code>.</em></li>
+<li><b>An orphan view.</b> "Tags used once" and "videos with no tags" as two clickable rail entries. Cleanup you can actually see the end of.</li>
+<li><b>A promote path.</b> When a tag crosses ~15 uses, surface it: "you have 17 videos tagged <code>agents</code> — promote to a Topic?" Your taxonomy should be allowed to learn from your behaviour instead of being fixed on day one.</li>
+</ul>
+
+<h3>Backfilling the existing library</h3>
+<p>Whatever you pick, you have an existing pile to classify. The transcripts and decks are already stored, so this costs Gemini calls but no re-fetching. Two honest ways to do it:</p>
+<ul class="tight">
+<li><b>Bootstrap-then-tag (better).</b> First pass: send the model 30–40 <code>tldr</code>s at once and ask it to propose a starting vocabulary of ~15 tags and ~8 Topics. You edit that list. Second pass: tag every video against the vocabulary you just approved. This produces a coherent vocabulary because the model saw the whole corpus before naming anything.</li>
+<li><b>Sequential (worse).</b> Tag videos one at a time, vocabulary growing as you go. The first 20 videos get tagged against an almost-empty vocabulary and end up with idiosyncratic tags nothing else ever reuses.</li>
+</ul>
+<p>Given your preference for choosing at the moment of action rather than accepting a hardcoded default, the bootstrap pass should end in a review screen where you rename, merge, and delete before a single video is touched.</p>
+
+<div class="mock"><div class="mock-bar"><div class="dots"><i></i><i></i><i></i></div><span>Mock 08 — tag manager: merge, rename, prune</span></div>
+  <div id="m8" style="padding:14px"></div>
+  <div class="legend"><span><b>Try:</b> select two tags → <b>Merge</b>. Or double-click a tag name to rename it. Counts update live.</span></div>
+</div>
+
+<!-- ============================================ -->
+<h2 id="research">09 · What the field actually does</h2>
+<div id="research-body">
+<p class="lede" style="margin-bottom:20px">A survey of the PIM literature and of what shipping products actually do — including two self-hosted apps that already solved almost exactly your problem. Three findings changed my recommendation; they're flagged in the callout at the end.</p>
+
+<h3>The empirical baseline is uncomfortable: folders beat tags</h3>
+<p>Bergman et al. ran two studies (Gmail, n=75, plus a file-system study) on folder-vs-tag preference in personal information management. The result is blunt: a <b>strong preference for folders over tags for both storage and retrieval</b>. In the minority of cases where people tagged at all, they typically applied <b>a single tag per item</b> — using tags as folders. Multi-classification was "only marginally used for retrieval", and tag-based retrieval was both <em>slower</em> and <em>less successful</em>.</p>
+<p>The stated cause: a 1→1 mapping ("item a is in folder x") is easier to remember than 1→many ("item a is reachable via x, y, or z"). A companion paper is titled, accurately, <em>"Tagging personal information: A contrast between attitudes and behavior"</em> — people say they prefer tagging, then don't do it.</p>
+<div class="callout">
+  <div class="eyebrow">What this means for you</div>
+  <p style="margin:0">If tagging is <b>manual</b>, you largely won't do it, and when you do you'll apply one tag. This is not an argument against tags — it's an argument that tags are only viable <em>when a machine applies them</em>, and that you still need a small, memorable, one-per-item backbone for navigation. Which is precisely the shape of option 04.</p>
+</div>
+<div class="src">is.biu.ac.il/sites/is/files/Folders%20vs%20Tags%20-%20Preprint%20version.pdf</div>
+
+<h3>Everyone converges on the same three layers</h3>
+<p>Zotero, Karakeep, Raindrop, Capacities and Notion all independently land on the same split:</p>
+<div class="tbl-scroll"><table>
+<thead><tr><th>Layer</th><th>Cardinality</th><th>Job</th></tr></thead>
+<tbody>
+<tr><td>Collections / lists / locations</td><td>few; one or a handful per item</td><td>Coarse, durable "where does this live"</td></tr>
+<tr><td>Tags</td><td>many; multi-valued</td><td>Cross-cutting themes — the auto-taggable layer</td></tr>
+<tr><td>Saved searches / smart lists</td><td>unlimited; zero cost</td><td>The actual browsing UI, as rules over the two above</td></tr>
+</tbody></table></div>
+<p>Capacities states the boundary most crisply: <em>"Use collections to group content within the same object type. Use tags to group content across different object types."</em> The Zotero community line is <em>"maximise tags and minimise sub-collections, and make full use of Saved Searches."</em></p>
+<p>Also worth knowing: <b>Zotero's collections are hierarchical <em>and</em> non-exclusive</b> — the same item can sit in several collections at once. That's a fourth model I hadn't considered: hierarchy without the one-home constraint. It weakens option 02's central objection, at the cost of the thing that made folders memorable in the first place.</p>
+
+<h3>The two closest pieces of prior art</h3>
+<p><b>Karakeep</b> (self-hosted bookmarks, LLM auto-tagging) and <b>Linkwarden</b> (same category) have both already built the thing you're describing. Their mechanics are worth copying almost verbatim.</p>
+
+<h4>Karakeep — silent auto-apply, made safe by provenance</h4>
+<ul class="tight">
+<li>Every tag attachment row carries <code>attachedBy: 'ai' | 'human'</code>. The UI splits into <b>Your Tags / AI Tags / Unused Tags</b>. Re-tagging <b>deletes only the AI rows</b> and re-attaches — so re-running the classifier is idempotent and never destroys your own work.</li>
+<li>Tag identity uses a <b>normalized generated column</b>: <code>lower()</code> then strip spaces, hyphens and underscores. <code>Machine Learning</code>, <code>machine-learning</code> and <code>machine_learning</code> collapse to one tag at the database level. (It does <em>not</em> handle singular/plural — nobody does, and everybody suffers for it.)</li>
+<li>It does <b>not</b> send the whole vocabulary. It embeds the new item, pulls the <b>top-10 nearest-neighbour bookmarks above 0.75 similarity</b>, takes their distinct tags, sorts shortest-name-first and truncates the joined list at 1000 characters. Prompt cost stays flat as the library grows.</li>
+<li>Tag style is a user setting injected into the prompt (<code>lowercase-hyphens</code>, <code>titlecase-spaces</code>, …) — casing drift fixed at generation time as well as at storage time.</li>
+<li>Ships a <b>Cleanups page</b> that detects probable duplicate tags and offers merges, plus <code>deleteUnused()</code> for orphans.</li>
+<li>Its prompt has a whole clause for refusing to tag Cloudflare pages, cookie walls and login interstitials. <b>Video analogue: sponsor reads, intros, "like and subscribe".</b></li>
+</ul>
+
+<h4>Linkwarden — tagging mode as an explicit user setting</h4>
+<p>Three modes the user picks between: <code>predefined</code> (a list you wrote), <code>existing</code> (your current tags only), <code>generate</code> (free invention). The <code>existing</code> prompt is the most transferable artefact in the whole survey:</p>
+<pre><code>EXISTING TAGS (sorted by usage): {tags}
+1. Output ONLY a JSON array
+2. Select 3-5 tags from the existing tags above
+3. Prefer frequently-used tags (earlier in the list) when equally relevant
+4. Match the EXACT capitalization from the existing tags
+6. If no tags match well, return fewer tags (minimum 1)
+7. Do not create new tags - only reuse existing ones</code></pre>
+<p>Line 3 is a free anti-sprawl prior costing one <code>ORDER BY</code>. I had counts in my prompt sketch but not the instruction to break ties toward the frequent ones.</p>
+
+<h3>Raindrop's policy is stricter than mine — and they explain why</h3>
+<blockquote style="border-left:3px solid var(--accent);margin:12px 0;padding:8px 16px;font-family:var(--serif);font-size:15px;background:var(--bg)">
+"We ensure that suggestions are based <b>only</b> on the collections and tags you've already set up — we don't generate new ones like some other services might, as those tend to be <b>too generic and not as useful</b>."
+</blockquote>
+<p>Raindrop never invents. Suggestions are pre-filled into the save form; you deselect and save. They handle cold start with an explicit message telling you to create a few tags first, and newly created tags become eligible immediately. Their newer assistant follows the same rule: <em>"Stella suggests changes — you review and approve before anything is applied."</em> They also have a <b>batch "organization tips" page</b> for retro-organising an existing library as a review surface rather than a background job.</p>
+
+<h3>Documented failure modes</h3>
+<div class="two">
+<div>
+<h4>Auto-tagging</h4>
+<ul class="tight" style="font-size:13.5px">
+<li><b>Out-of-vocabulary leakage ~10%</b> even with a hard "ONLY use these tags" constraint (measured: 0.470 for zero-shot LLaMA 1, 0.100 for LLaMA 2). You must validate output against the DB — the prompt constraint is not a guarantee.</li>
+<li><b>Category inflation</b> — models over-assign in large taxonomies. Every production prompt caps at 3–5 and permits an empty result.</li>
+<li><b>Granularity drift</b> from partial cues: "context over-generalization" measured at 29.8% of errors, "inferential overreach" at 26.9%. For a transcript-based summariser this predicts tags derived from a 30-second tangent in an hour-long video.</li>
+<li><b>Markdown-fenced JSON</b> from smaller models is a real filed bug in Linkwarden. Use structured output <em>and</em> write the tolerant parser. Your <code>gemini.py</code> already has <code>_strip_fences</code> — that instinct was correct.</li>
+</ul>
+</div>
+<div>
+<h4>Abandonment</h4>
+<ul class="tight" style="font-size:13.5px">
+<li>Forte's five reasons tagging dies: poor memorability, decision fatigue, lack of concreteness, cataloguing-instead-of-doing, and <b>"requires perfect compliance or information gets lost."</b></li>
+<li>Zotero users' recurring regret: <em>"it's hard to make wholesale changes to tags once you have a large library"</em> — build merge/rename <b>before</b> the vocabulary grows.</li>
+<li>Ban date tags (<code>q3-2024</code>) — they age into noise. Ban person tags (<code>for-katie</code>) — those are bookmarks, not tags.</li>
+<li>Only ~10% of users find tag suggestions helpful, and ~1 in 3 accepted tags come from suggestions. Suggestions also measurably <b>compress the long tail</b> of the vocabulary — which is what you want here, but it means genuinely novel topics get suppressed. Keep an explicit "none of these fit" escape.</li>
+</ul>
+</div>
+</div>
+
+<h3>Product comparison</h3>
+<div class="tbl-scroll"><table>
+<thead><tr><th>Product</th><th>Org model</th><th>Auto-tag?</th><th>Notable mechanic</th></tr></thead>
+<tbody>
+<tr><td><b>Karakeep</b></td><td>Nested lists + Smart Lists (saved query) + flat tags</td><td>Yes, silent</td><td><code>attachedBy: ai|human</code>; vector-neighbour candidate set; normalized-name generated column; Cleanups page; rule engine</td></tr>
+<tr><td><b>Linkwarden</b></td><td>Nested collections + tags</td><td>Yes, silent, 3 modes</td><td><code>predefined/existing/generate</code> switch; vocab passed usage-sorted</td></tr>
+<tr><td><b>Raindrop.io</b></td><td>Nested collections + flat tags</td><td><b>Yes, suggest-then-confirm</b></td><td>Never invents; pre-filled save form; explicit cold-start message; batch reorganise page</td></tr>
+<tr><td><b>Zotero</b></td><td>Hierarchical <b>non-exclusive</b> collections + tags + saved searches</td><td>No</td><td>9 colour-pinned tags on number keys; auto "Unfiled Items"; tag selector ANDs</td></tr>
+<tr><td><b>Readwise Reader</b></td><td>Locations (Inbox/Later/Shortlist/Archive) × Feed (Unseen/Seen) × tags</td><td>Partial</td><td>Hard <b>Feed vs Library</b> split; facets include domain and reading position</td></tr>
+<tr><td><b>Instapaper</b></td><td>Exclusive folders, no nesting</td><td>No</td><td>Archiving strips the folder — a pure demo of the one-home failure</td></tr>
+<tr><td><b>Pinboard</b></td><td>Flat tags + <b>bundles</b></td><td>No</td><td>Bundles = named tag groups; tags case-insensitive, display-as-entered</td></tr>
+<tr><td><b>Obsidian</b></td><td>Folders + nested tags <code>ai/llm</code></td><td>Plugin only</td><td>Tag Wrangler exists solely because rename/merge is essential and wasn't native</td></tr>
+<tr><td><b>Notion</b></td><td>One database, many views</td><td>Per-property, confirm</td><td>Gallery view for libraries — thumbnails beat lists for browsing</td></tr>
+<tr><td><b>Plex / Jellyfin</b></td><td><b>Separate library per content type</b></td><td>Metadata agents</td><td>Mixed libraries explicitly discouraged — narrower scope = better auto-enrichment</td></tr>
+<tr><td><b>Gmail</b></td><td>Nested multi-valued labels + filters</td><td>Deterministic rules</td><td>Standard advice: <b>cap at 6–12 labels</b>, expand only on need</td></tr>
+<tr><td><b>Shopify</b></td><td>Products + tags + smart collections</td><td>—</td><td><b>The tag <em>is</em> the collection rule</b> — membership updates automatically</td></tr>
+<tr><td><b>YouTube</b></td><td>One flat Watch Later</td><td>No</td><td>No filter/sort/search → documented 1000-item backlogs. Your current state, extrapolated.</td></tr>
+</tbody></table></div>
+
+<h3>Where the research contradicted me</h3>
+<div class="callout" style="border-color:var(--accent)">
+  <div class="eyebrow" style="color:var(--accent)">Three changes to what I wrote above</div>
+  <ol class="tight" style="margin-bottom:0">
+    <li><b>Topics should be a flag on tags, not a separate collection.</b> Shopify's smart-collection model resolves the "when does a tag graduate into a Topic?" question by dissolving it: a collection <em>is</em> a saved view whose predicate is a tag. So instead of <code>topics</code> and <code>tags</code> as two tables, use <b>one <code>tags</code> table with <code>kind: 'topic' | 'tag'</code></b>. Promotion becomes a flag flip instead of a data migration, the Topic enum is still just <code>SELECT name WHERE kind='topic'</code>, and §08's "promote at 15 uses" button becomes one <code>UPDATE</code>. Strictly better than what I proposed, same UX.</li>
+    <li><b>Track tag provenance from day one.</b> I completely missed this. Karakeep's <code>attachedBy: 'ai' | 'human'</code> is the mechanism that makes auto-tagging safe: it gives you bulk-revert, a "review what the AI did" surface, and idempotent re-tagging that never clobbers your own edits. Retrofitting it later means you can't tell which tags you chose. It costs one field.</li>
+    <li><b>My "structurally impossible" claim was too strong for tags.</b> It holds for the Topic enum — a response-schema enum is enforced by the API. It does <em>not</em> hold for the free-form tags array, where measured out-of-vocabulary leakage runs around 10% even under a hard prompt constraint. <b>Validate every returned tag against the DB before applying it</b>, and route non-members into the "new tag, needs confirmation" bucket rather than silently creating them.</li>
+  </ol>
+</div>
+<p>Two smaller corrections: bump the tag cap from my 2–4 to <b>3–5, and explicitly permit an empty array</b> (universal across both self-hosted implementations). And add a <b>boilerplate exclusion clause</b> to the prompt — the video-native version of Karakeep's cookie-wall refusal is sponsor reads, intros, outros and "like and subscribe".</p>
+
+<h3>Where it agreed</h3>
+<p>Two-pass retro-tagging (seed batch → human curates the vocabulary → constrained pass over the rest) is exactly what §08 argues, arrived at independently. Suggest-then-confirm gated on <em>tag creation specifically</em> is Raindrop's policy taken one step looser. The 6–12 label cap matches the ~8 Topics I proposed. And "start broad, split later only when volume demands it" (Stack Overflow's tag-sprawl guidance) is the same principle as the promote-at-threshold path.</p>
+
+<h3>One structural idea worth stealing outright</h3>
+<p>Readwise Reader splits <b>Feed</b> (pushed, subscription-sourced, Unseen/Seen) from <b>Library</b> (curated, Inbox/Later/Shortlist/Archive) as two separate locations, not one list. Jellyfin makes the same argument at the library level and warns that mixing content types degrades automatic metadata enrichment.</p>
+<p>That's the answer to your dormant subscriptions feature: when you switch it on, subscription-pulled videos should land in a <b>separate Feed location</b> that you triage into the library, not get interleaved into the main list. It also keeps the rail's two axes honest — <em>who made it</em> (channel) and <em>what it's about</em> (Topic) are different questions and should never share a section.</p>
+
+<div class="mock"><div class="mock-bar"><div class="dots"><i></i><i></i><i></i></div><span>Mock 09 — provenance + normalized identity, the two mechanics I missed</span></div>
+  <div id="m9" style="padding:14px"></div>
+  <div class="legend"><span><b>Try:</b> add a tag by hand, then <b>Re-run AI tagger</b> — your tag survives, the AI's are replaced. Then type a messy variant to see normalization collapse it.</span></div>
+</div>
+</div>
+
+<!-- ============================================ -->
+<h2 id="rec">10 · Recommendation</h2>
+<div id="rec-body">
+<p class="lede" style="margin-bottom:18px">Build <b>option 04</b> — one closed Topic plus open tags — with the <b>threshold-hybrid</b> tagging policy, and do the option 01 status/star/sort work as its foundation.</p>
+
+<p>The reasoning in one paragraph: you have genuinely unrelated subject areas, which is the case folders are good at, <em>and</em> you already have crossover material, which is the case folders are bad at. Two tiers let you take the win from each without inheriting either failure mode. The closed Topic list gives the rail a permanent shape — the thing a flat tag list can never give you — while open tags absorb all the specificity and all the model's enthusiasm, in a place where sprawl is a nuisance rather than a navigation failure. And because the Topic enum is enforced in Gemini's response schema, the one part of the system that <em>must</em> stay stable is stable by construction, not by prompt discipline.</p>
+
+<p>The survey in §09 didn't overturn this — the Bergman result (people won't hand-tag, and when they do they apply one tag) is an argument <em>for</em> a machine-applied tag layer sitting under a small memorable backbone, which is what two-tier is. But it did improve the implementation in three ways, folded in below.</p>
+
+<h3>What I'd build, in order</h3>
+<ol class="tight">
+<li><b>Migration + status/star.</b> One <code>tags</code> collection with <code>kind: 'topic' | 'tag'</code> and a <code>norm</code> column (<code>lower()</code>, strip space/<code>-</code>/<code>_</code>, unique). Add <code>videos.topic</code>, <code>videos.tags</code>, <code>videos.tag_source</code>, <code>videos.status</code>, <code>videos.starred</code>. Stop hardcoding them in <code>recordToVideo()</code>. Replace the fake <code>CHANNELS</code> rail with real lenses. This alone makes the current list usable and it's the smallest useful commit.</li>
+<li><b>Seed the vocabulary from what you already have.</b> One-off script: feed all existing <code>tldr</code>s to Gemini, get back a proposed ~8 Topics and ~15 tags, review and edit that list yourself before anything is written. This is the step that decides whether the vocabulary is coherent, so it's worth being the one manual step.</li>
+<li><b>Backfill.</b> Batch-classify the existing library against the approved vocabulary. Land results in a review screen, not straight into the DB. Everything it writes is marked <code>ai</code>, so a bad run is one bulk-revert away.</li>
+<li><b>Wire the tagger into <code>/slides</code>.</b> Extend the deck response schema with <code>topic</code> (enum, built from <code>kind='topic'</code>) and <code>tags</code> + confidences. Pass the vocabulary usage-sorted. Intersect the response against the tag table before applying. Add the suggestion chips to <code>AddVideoDialog</code> with the threshold-hybrid policy.</li>
+<li><b>Two-tier rail.</b> Topics on top, tags scoped to the selected Topic below — mock 04a.</li>
+<li><b>Tag manager.</b> Merge / rename / delete / orphans, plus the <code>kind</code> flip for promotion — mock 08. Small, but it's what keeps step 4 from rotting, and Zotero users' recurring regret is that they built it too late.</li>
+</ol>
+
+<h3>Three changes from the research</h3>
+<ul class="tight">
+<li><b>One table, not two.</b> <code>kind: 'topic' | 'tag'</code> instead of separate <code>topics</code> and <code>tags</code> collections. Promoting a tag to a Topic becomes an <code>UPDATE</code> rather than a migration, and the Topic enum is still just a filtered select. Shopify's smart-collection model, applied.</li>
+<li><b>Provenance from day one.</b> Record whether each tag was applied by you or by the model. It's what makes re-running the tagger safe, gives you a "review what the AI did" surface, and makes a bad batch revertible. Costs one field now; unrecoverable if you skip it.</li>
+<li><b>Validate, don't trust.</b> The Topic enum is enforced by the response schema. The tags array is not — check every returned tag against the DB and route strangers into the confirm bucket.</li>
+</ul>
+
+<h3>What I'd deliberately not build yet</h3>
+<ul class="tight">
+<li><b>Saved views (05) — but sooner than I first said.</b> The research ordering is <em>views before rules before hierarchy</em>, because views are pure derived state with zero blast radius. I'd still not build the full rule-builder UI up front; I'd ship the one-line version — "pin the current filter to the rail" — which with the <code>kind</code> flag is literally what a Topic already is. Full query builder once you've felt which filters you keep retyping.</li>
+<li><b>Rules that write data.</b> Karakeep has both saved queries and an event-driven rule engine; the split is instructive. Queries for browsing, rules only for things you genuinely want persisted. You don't need the second one yet.</li>
+<li><b>Nested Topics.</b> One level. If you find yourself wanting <code>AI / Agents</code>, that's what tags are for.</li>
+<li><b>Embeddings (06).</b> Revisit later as semantic <em>search</em> only. Worth noting Karakeep uses embeddings for something smarter than clustering: retrieving the tags of the 10 nearest already-tagged items as the candidate set, which keeps prompt cost flat as the vocabulary grows. That's the version worth building — but not until the vocabulary is big enough that sending all of it is actually a problem, which for you is a long way off.</li>
+<li><b>Merging subscriptions into the Topic rail.</b> The rail currently pretends to be a subscription list. Don't half-migrate it — <em>who made it</em> and <em>what it's about</em> are different axes, and merging them is how the rail got confusing in the first place. When you do switch subscriptions on, copy Readwise: pulled videos land in a separate <b>Feed</b> location with Unseen/Seen, and you triage them into the library. They should never interleave with things you deliberately added.</li>
+</ul>
+
+<div class="callout">
+  <div class="eyebrow">If you'd rather do less</div>
+  <p style="margin:0">The honest smaller version is <b>01 + 03</b>: lenses, plus flat tags with suggest-then-confirm, and skip Topics entirely. You lose the browsable backbone and you'll need the tag manager sooner, but it's meaningfully less code and it upgrades cleanly into 04 later — adding a <code>topic</code> relation on top of an existing tag system is additive, not a migration away from anything. If the two-tier version feels like too much for now, this is the version that doesn't paint you into a corner.</p>
+</div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+/* =======================================================================
+   Shared mock dataset — one library, deliberately multi-topic
+   ======================================================================= */
+const V = [
+  {id:1,  t:"The Big Misconception About Electricity", ch:"Veritasium",   d:14, days:2,  topic:"Science", tags:["physics","explainer"], st:"unread", star:true},
+  {id:2,  t:"Building an agent that actually ships code", ch:"Latent Space", d:52, days:3, topic:"AI", tags:["llm","agents","interview"], st:"unread", star:false},
+  {id:3,  t:"Why I stopped index investing (and came back)", ch:"Ben Felix", d:23, days:5, topic:"Money", tags:["investing","personal-finance"], st:"read", star:false},
+  {id:4,  t:"Hand-cut dovetails for people who hate them", ch:"Rex Krueger", d:31, days:6, topic:"Craft", tags:["woodworking","joinery"], st:"read", star:true},
+  {id:5,  t:"Using LLMs to rebalance a portfolio", ch:"Latent Space", d:41, days:7, topic:"AI", tags:["llm","investing","agents"], st:"unread", star:false},
+  {id:6,  t:"Zone 2 is not what you think it is", ch:"Peter Attia",   d:68, days:9, topic:"Body", tags:["training","longevity","interview"], st:"reading", star:false},
+  {id:7,  t:"Rust async runtimes, benchmarked", ch:"Jon Gjengset",   d:96, days:11, topic:"Software", tags:["rust","performance"], st:"unread", star:false},
+  {id:8,  t:"The fall of Constantinople in 30 minutes", ch:"Kings & Generals", d:29, days:14, topic:"History", tags:["history","warfare"], st:"read", star:false},
+  {id:9,  t:"Sourdough without the mysticism", ch:"Adam Ragusea",  d:18, days:16, topic:"Craft", tags:["cooking","bread"], st:"read", star:false},
+  {id:10, t:"Context windows are a lie", ch:"Latent Space",  d:37, days:18, topic:"AI", tags:["llm","evaluation"], st:"unread", star:true},
+  {id:11, t:"Sharpening: the only guide you need", ch:"Rex Krueger", d:26, days:21, topic:"Craft", tags:["woodworking","tools"], st:"read", star:false},
+  {id:12, t:"What actually happened in 2008", ch:"Patrick Boyle", d:44, days:25, topic:"Money", tags:["investing","history","explainer"], st:"unread", star:false},
+  {id:13, t:"Protein timing: the evidence", ch:"Peter Attia", d:55, days:29, topic:"Body", tags:["training","nutrition"], st:"unread", star:false},
+  {id:14, t:"Writing a toy database in Rust", ch:"Jon Gjengset", d:121, days:34, topic:"Software", tags:["rust","databases"], st:"reading", star:false},
+];
+const TOPICS = [
+  {n:"AI",       c:"#a85a2a"}, {n:"Money",   c:"#3f6b46"},
+  {n:"Craft",    c:"#8a6a1f"}, {n:"Body",    c:"#2e6f8e"},
+  {n:"Software", c:"#6a4a8a"}, {n:"History", c:"#9a3b2f"},
+  {n:"Science",  c:"#4a7a7a"},
+];
+const el = (h) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstElementChild; };
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const allTags = () => { const m={}; V.forEach(v=>v.tags.forEach(t=>m[t]=(m[t]||0)+1)); return m; };
+const topicColor = (n) => (TOPICS.find(t=>t.n===n)||{}).c || 'var(--muted)';
+const ago = (d) => d < 7 ? d+"d" : Math.round(d/7)+"w";
+
+/* generic row renderer */
+function rowHTML(v, opts={}) {
+  const tagPills = (v.tags||[]).slice(0,4).map(t =>
+    `<span class="pill ${opts.hot&&opts.hot.includes(t)?'on':''}">${esc(t)}</span>`).join('');
+  const topicPill = opts.showTopic && v.topic
+    ? `<span class="pill topic" style="color:${topicColor(v.topic)};border-color:${topicColor(v.topic)}">${esc(v.topic)}</span>` : '';
+  return `<div class="row" data-id="${v.id}">
+    <div class="thumb">${v.d}m</div>
+    <div style="min-width:0">
+      <div class="row-meta"><span>${esc(v.ch)}</span><span>·</span><span>${ago(v.days)}</span>
+        ${v.star?'<span style="color:var(--accent)">★</span>':''}
+        ${opts.showStatus?`<span style="margin-left:auto;opacity:.8">${v.st}</span>`:''}</div>
+      <div class="row-title">${esc(v.t)}</div>
+      <div class="row-tags">${topicPill}${tagPills}${opts.rowExtra?opts.rowExtra(v):''}</div>
+    </div></div>`;
+}
+function listHTML(vs, opts={}) {
+  if (!vs.length) return `<div class="empty">Nothing here.</div>`;
+  return `<div class="list">${vs.map(v=>rowHTML(v,opts)).join('')}</div>`;
+}
+
+/* ===================== Mock 01 — lenses ===================== */
+(function(){
+  const root = document.getElementById('m1');
+  let lens='all', sort='new';
+  const LENSES=[['inbox','Inbox',v=>v.st==='unread'&&v.days<10],['unread','Unread',v=>v.st==='unread'],
+                ['reading','In progress',v=>v.st==='reading'],['star','Starred',v=>v.star],
+                ['read','Archive',v=>v.st==='read'],['all','All videos',()=>true]];
+  function draw(){
+    const f = LENSES.find(l=>l[0]===lens)[2];
+    let vs = V.filter(f);
+    vs = [...vs].sort((a,b)=> sort==='new'? a.days-b.days : sort==='old'? b.days-a.days :
+                              sort==='long'? b.d-a.d : a.t.localeCompare(b.t));
+    root.innerHTML = `
+      <div class="rail">
+        <div class="rail-h">Library</div>
+        ${LENSES.map(l=>`<div class="rail-i ${lens===l[0]?'on':''}" data-l="${l[0]}">
+          <span>${l[1]}</span><span class="ct">${V.filter(l[2]).length}</span></div>`).join('')}
+      </div>
+      <div style="display:flex;flex-direction:column;min-height:0">
+        <div style="padding:8px 12px;border-bottom:1px solid var(--rule);display:flex;gap:8px;align-items:center;background:var(--surface)">
+          <span class="note" style="flex:1">${vs.length} videos</span>
+          ${[['new','Newest'],['old','Oldest'],['long','Longest'],['az','A–Z']].map(s=>
+            `<button class="btn sm ${sort===s[0]?'acc':''}" data-s="${s[0]}">${s[1]}</button>`).join('')}
+        </div>
+        <div style="flex:1;overflow:auto">${listHTML(vs,{showStatus:true})}</div>
+      </div>`;
+    root.querySelectorAll('[data-l]').forEach(e=>e.onclick=()=>{lens=e.dataset.l;draw();});
+    root.querySelectorAll('[data-s]').forEach(e=>e.onclick=()=>{sort=e.dataset.s;draw();});
+    root.querySelectorAll('.row').forEach(e=>e.onclick=()=>{
+      const v=V.find(x=>x.id==e.dataset.id); v.star=!v.star; draw();});
+  }
+  draw();
+})();
+
+/* ===================== Mock 02 — shelves ===================== */
+(function(){
+  const root = document.getElementById('m2');
+  const S = V.map(v=>({...v, shelf: v.id===5 ? null : v.topic}));   // v5 = the crossover, deliberately unshelved
+  let sel='__all';
+  const shelves = () => TOPICS.map(t=>t.n);
+  function draw(){
+    const counts = {}; shelves().forEach(s=>counts[s]=S.filter(v=>v.shelf===s).length);
+    const un = S.filter(v=>!v.shelf).length;
+    let vs = sel==='__all'? S : sel==='__un'? S.filter(v=>!v.shelf) : S.filter(v=>v.shelf===sel);
+    root.innerHTML=`
+      <div class="rail">
+        <div class="rail-h">Shelves</div>
+        <div class="rail-i ${sel==='__all'?'on':''}" data-s="__all"><span>All videos</span><span class="ct">${S.length}</span></div>
+        ${shelves().map(s=>`<div class="rail-i ${sel===s?'on':''}" data-s="${s}">
+          <span class="dot" style="background:${topicColor(s)}"></span><span>${s}</span><span class="ct">${counts[s]||''}</span></div>`).join('')}
+        <div class="rail-h" style="margin-top:8px">Needs filing</div>
+        <div class="rail-i ${sel==='__un'?'on':''}" data-s="__un" style="${un?'color:var(--accent)':''}">
+          <span>Unshelved</span><span class="ct">${un||''}</span></div>
+      </div>
+      <div style="overflow:auto">${listHTML(vs,{rowExtra:v=>
+        `<button class="btn sm" data-file="${v.id}" style="margin-left:auto">⇄ ${v.shelf?esc(v.shelf):'file…'}</button>`})}</div>`;
+    root.querySelectorAll('[data-s]').forEach(e=>e.onclick=()=>{sel=e.dataset.s;draw();});
+    root.querySelectorAll('[data-file]').forEach(e=>e.onclick=(ev)=>{
+      ev.stopPropagation();
+      const v=S.find(x=>x.id==e.dataset.file);
+      const list=shelves(); const cur=list.indexOf(v.shelf);
+      v.shelf = cur===list.length-1 ? null : list[cur+1];
+      draw();
+    });
+  }
+  draw();
+})();
+
+/* ============ suggestion engine shared by 03a / 04b / 07 ============ */
+const SAMPLE = {
+  title:"Using LLMs to rebalance a portfolio",
+  ch:"Latent Space",
+  tldr:"Walks through wiring a language model to a brokerage API, why naive prompting produces overtrading, and how to constrain it with a rules layer.",
+  topic:"AI",
+  sugg:[ {n:"llm",       conf:.94, isNew:false},
+         {n:"investing", conf:.88, isNew:false},
+         {n:"agents",    conf:.71, isNew:false},
+         {n:"api-design",conf:.58, isNew:true } ],
+};
+function chip(t, on){
+  return `<span class="pill click ${t.isNew?'new':''} ${on?'on':''}" data-t="${t.n}" style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;font-size:11px">
+    ${on?'✓ ':''}${esc(t.n)}${t.isNew?' <span style="opacity:.7">·new</span>':''}
+    <span class="conf" title="confidence ${t.conf}"><i style="width:${Math.round(t.conf*100)}%"></i></span></span>`;
+}
+
+/* ===================== Mock 03a — add dialog ===================== */
+(function(){
+  const root=document.getElementById('m3a');
+  let phase='idle', on=new Set();
+  function draw(){
+    const vocab = Object.entries(allTags()).sort((a,b)=>b[1]-a[1]);
+    root.innerHTML=`<div class="dlg">
+      <div class="dlg-h"><div class="t">Add video</div><div class="note">ONE-SHOT IMPORT</div></div>
+      <div class="dlg-b">
+        <div><span class="fieldlbl">Youtube url</span>
+          <input class="inp" value="https://www.youtube.com/watch?v=Kx7Ln4dTb9A" readonly></div>
+        ${phase==='idle'?`
+          <div class="note">Transcript → deck → tags all happen in the one backend call.</div>`:''}
+        ${phase==='busy'?`<div class="note">Fetching transcript, generating deck, classifying against ${vocab.length} existing tags…</div>`:''}
+        ${phase==='done'?`
+          <div>
+            <span class="fieldlbl">Suggested tags <span style="text-transform:none;letter-spacing:0">— existing pre-selected, new ones need a click</span></span>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">${SAMPLE.sugg.map(t=>chip(t,on.has(t.n))).join('')}</div>
+          </div>
+          <div>
+            <span class="fieldlbl">Or pick from your vocabulary</span>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;max-height:74px;overflow:auto">
+              ${vocab.map(([n,c])=>`<span class="pill click ${on.has(n)?'on':''}" data-t="${n}">${esc(n)} <span style="opacity:.6">${c}</span></span>`).join('')}
+            </div>
+          </div>
+          <div><span class="fieldlbl">Add your own</span>
+            <input class="inp" id="m3a-new" placeholder="type a tag, press Enter"></div>
+          <div class="note">Applying: <b style="color:var(--accent)">${on.size?[...on].map(esc).join(', '):'nothing yet'}</b></div>`:''}
+      </div>
+      <div class="dlg-f">
+        <button class="btn gh">Cancel</button>
+        ${phase==='done'
+          ? `<button class="btn acc" id="m3a-save">Save with ${on.size} tag${on.size===1?'':'s'}</button>`
+          : `<button class="btn acc" id="m3a-go" ${phase==='busy'?'disabled':''}>${phase==='busy'?'Working…':'Analyse'}</button>`}
+      </div></div>`;
+    const go=root.querySelector('#m3a-go');
+    if(go) go.onclick=()=>{ phase='busy'; draw();
+      setTimeout(()=>{ phase='done';
+        on=new Set(SAMPLE.sugg.filter(t=>!t.isNew&&t.conf>=.75).map(t=>t.n)); draw(); },900); };
+    root.querySelectorAll('[data-t]').forEach(e=>e.onclick=()=>{
+      const n=e.dataset.t; on.has(n)?on.delete(n):on.add(n); draw();});
+    const ni=root.querySelector('#m3a-new');
+    if(ni) ni.onkeydown=(ev)=>{ if(ev.key==='Enter'&&ni.value.trim()){ on.add(ni.value.trim().toLowerCase()); draw(); } };
+    const sv=root.querySelector('#m3a-save');
+    if(sv) sv.onclick=()=>{ phase='idle'; on=new Set(); draw(); };
+  }
+  draw();
+})();
+
+/* ===================== Mock 03b — tag rail ===================== */
+(function(){
+  const root=document.getElementById('m3b');
+  let sel=new Set(), mode='any', order='count';
+  function draw(){
+    const counts=allTags();
+    let keys=Object.keys(counts);
+    keys.sort((a,b)=> order==='count' ? counts[b]-counts[a]||a.localeCompare(b) : a.localeCompare(b));
+    let vs=V;
+    if(sel.size) vs = V.filter(v => mode==='any'
+      ? [...sel].some(t=>v.tags.includes(t))
+      : [...sel].every(t=>v.tags.includes(t)));
+    root.innerHTML=`
+      <div class="rail">
+        <div class="rail-h"><span>Tags (${keys.length})</span>
+          <button class="btn sm gh" id="m3b-o" style="padding:2px 5px">${order==='count'?'↓#':'A–Z'}</button></div>
+        <div style="display:flex;gap:5px;padding:4px 8px 8px">
+          <button class="btn sm ${mode==='any'?'acc':''}" data-m="any" style="flex:1">ANY</button>
+          <button class="btn sm ${mode==='all'?'acc':''}" data-m="all" style="flex:1">ALL</button>
+        </div>
+        ${keys.map(k=>`<div class="rail-i ${sel.has(k)?'on':''}" data-t="${k}">
+          <span>${esc(k)}</span><span class="ct">${counts[k]}</span></div>`).join('')}
+      </div>
+      <div style="display:flex;flex-direction:column;min-height:0">
+        <div style="padding:8px 12px;border-bottom:1px solid var(--rule);background:var(--surface);display:flex;gap:8px;align-items:center">
+          <span class="note">${vs.length} of ${V.length}${sel.size?` · ${mode.toUpperCase()} of ${[...sel].map(esc).join(' + ')}`:''}</span>
+          ${sel.size?`<button class="btn sm gh" id="m3b-c" style="margin-left:auto">clear</button>`:''}
+        </div>
+        <div style="flex:1;overflow:auto">${listHTML(vs,{hot:[...sel]})}</div>
+      </div>`;
+    root.querySelectorAll('[data-t]').forEach(e=>e.onclick=()=>{
+      const t=e.dataset.t; sel.has(t)?sel.delete(t):sel.add(t); draw();});
+    root.querySelectorAll('[data-m]').forEach(e=>e.onclick=()=>{mode=e.dataset.m;draw();});
+    root.querySelector('#m3b-o').onclick=()=>{order=order==='count'?'az':'count';draw();};
+    const c=root.querySelector('#m3b-c'); if(c) c.onclick=()=>{sel=new Set();draw();};
+  }
+  draw();
+})();
+
+/* ===================== Mock 04a — two-tier rail ===================== */
+(function(){
+  const root=document.getElementById('m4a');
+  let topic=null, sel=new Set();
+  function draw(){
+    let scope = topic ? V.filter(v=>v.topic===topic) : V;
+    const counts={}; scope.forEach(v=>v.tags.forEach(t=>counts[t]=(counts[t]||0)+1));
+    const keys=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b));
+    [...sel].forEach(t=>{ if(!keys.includes(t)) sel.delete(t); });
+    let vs = sel.size ? scope.filter(v=>[...sel].every(t=>v.tags.includes(t))) : scope;
+    const tcount={}; TOPICS.forEach(t=>tcount[t.n]=V.filter(v=>v.topic===t.n).length);
+    root.innerHTML=`
+      <div class="rail">
+        <div class="rail-h">Topics</div>
+        <div class="rail-i ${!topic?'on':''}" data-tp=""><span>Everything</span><span class="ct">${V.length}</span></div>
+        ${TOPICS.map(t=>`<div class="rail-i ${topic===t.n?'on':''}" data-tp="${t.n}">
+          <span class="dot" style="background:${t.c}"></span><span>${t.n}</span><span class="ct">${tcount[t.n]||''}</span></div>`).join('')}
+        <div class="rail-h" style="margin-top:10px">Tags ${topic?`<span style="text-transform:none;letter-spacing:0">in ${esc(topic)}</span>`:''}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;padding:2px 8px">
+          ${keys.map(k=>`<span class="pill click ${sel.has(k)?'on':''}" data-t="${k}">${esc(k)} <span style="opacity:.55">${counts[k]}</span></span>`).join('')}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;min-height:0">
+        <div style="padding:8px 12px;border-bottom:1px solid var(--rule);background:var(--surface);display:flex;align-items:center;gap:8px">
+          <span class="note">${topic?`<b style="color:${topicColor(topic)}">${esc(topic)}</b>`:'All topics'}
+            ${sel.size?` › ${[...sel].map(esc).join(' + ')}`:''} · ${vs.length} videos</span>
+          ${(topic||sel.size)?`<button class="btn sm gh" id="m4a-c" style="margin-left:auto">reset</button>`:''}
+        </div>
+        <div style="flex:1;overflow:auto">${listHTML(vs,{showTopic:!topic,hot:[...sel]})}</div>
+      </div>`;
+    root.querySelectorAll('[data-tp]').forEach(e=>e.onclick=()=>{topic=e.dataset.tp||null;sel=new Set();draw();});
+    root.querySelectorAll('[data-t]').forEach(e=>e.onclick=()=>{
+      const t=e.dataset.t; sel.has(t)?sel.delete(t):sel.add(t); draw();});
+    const c=root.querySelector('#m4a-c'); if(c) c.onclick=()=>{topic=null;sel=new Set();draw();};
+  }
+  draw();
+})();
+
+/* ===================== Mock 04b — two-tier add dialog ===================== */
+(function(){
+  const root=document.getElementById('m4b');
+  let phase='idle', on=new Set(), topic=SAMPLE.topic;
+  function draw(){
+    root.innerHTML=`<div class="dlg">
+      <div class="dlg-h"><div class="t">Add video</div><div class="note">TOPIC IS A CLOSED LIST · TAGS ARE OPEN</div></div>
+      <div class="dlg-b">
+        <div><span class="fieldlbl">Youtube url</span>
+          <input class="inp" value="https://www.youtube.com/watch?v=Kx7Ln4dTb9A" readonly></div>
+        ${phase==='done'?`
+        <div style="background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:10px 12px">
+          <div class="note" style="margin-bottom:4px">DECK TL;DR</div>
+          <div style="font-family:var(--serif);font-size:13.5px;line-height:1.45">${esc(SAMPLE.tldr)}</div>
+        </div>
+        <div>
+          <span class="fieldlbl">Topic — exactly one, cannot be invented</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select class="inp" id="m4b-tp" style="flex:1">
+              ${TOPICS.map(t=>`<option ${topic===t.n?'selected':''}>${t.n}</option>`).join('')}
+              <option value="">— Unsorted —</option>
+            </select>
+            <span class="pill" style="background:transparent;border:1px solid var(--rule-strong)">AI · 0.90</span>
+          </div>
+        </div>
+        <div>
+          <span class="fieldlbl">Tags — open, ${SAMPLE.sugg.filter(t=>t.isNew).length} new proposed</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">${SAMPLE.sugg.map(t=>chip(t,on.has(t.n))).join('')}</div>
+        </div>
+        <div class="note">Result: <b style="color:${topicColor(topic)}">${topic||'Unsorted'}</b>
+          · <b style="color:var(--accent)">${on.size?[...on].map(esc).join(', '):'no tags'}</b></div>`
+        :`<div class="note">Topic comes back as a schema enum, so a hallucinated Topic is structurally impossible.</div>`}
+      </div>
+      <div class="dlg-f">
+        <button class="btn gh">Cancel</button>
+        ${phase==='done'?`<button class="btn acc" id="m4b-save">Save</button>`
+          :`<button class="btn acc" id="m4b-go" ${phase==='busy'?'disabled':''}>${phase==='busy'?'Working…':'Analyse'}</button>`}
+      </div></div>`;
+    const go=root.querySelector('#m4b-go');
+    if(go) go.onclick=()=>{phase='busy';draw();setTimeout(()=>{phase='done';
+      on=new Set(SAMPLE.sugg.filter(t=>!t.isNew&&t.conf>=.75).map(t=>t.n));draw();},900);};
+    root.querySelectorAll('[data-t]').forEach(e=>e.onclick=()=>{
+      const n=e.dataset.t; on.has(n)?on.delete(n):on.add(n); draw();});
+    const s=root.querySelector('#m4b-tp'); if(s) s.onchange=()=>{topic=s.value;draw();};
+    const sv=root.querySelector('#m4b-save'); if(sv) sv.onclick=()=>{phase='idle';on=new Set();topic=SAMPLE.topic;draw();};
+  }
+  draw();
+})();
+
+/* ===================== Mock 05 — smart views ===================== */
+(function(){
+  const root=document.getElementById('m5');
+  const FIELDS=[['tag','tag','is'],['topic','topic','is'],['status','status','is'],['dur','duration (min)','>'],['age','added within (days)','<'],['ch','channel','is']];
+  let rules=[{f:'topic',op:'is',val:'AI'},{f:'status',op:'is',val:'unread'}];
+  let mode='all', views=[{name:'AI backlog',n:2}], name='';
+  const tagList=()=>Object.keys(allTags()).sort();
+  function match(v,r){
+    switch(r.f){
+      case 'tag': return v.tags.includes(r.val);
+      case 'topic': return v.topic===r.val;
+      case 'status': return v.st===r.val;
+      case 'ch': return v.ch===r.val;
+      case 'dur': return r.op==='>'? v.d>+r.val : v.d<+r.val;
+      case 'age': return v.days < +r.val;
+    } return true;
+  }
+  function valInput(r,i){
+    if(r.f==='tag') return `<select class="inp" data-v="${i}">${tagList().map(t=>`<option ${r.val===t?'selected':''}>${t}</option>`).join('')}</select>`;
+    if(r.f==='topic') return `<select class="inp" data-v="${i}">${TOPICS.map(t=>`<option ${r.val===t.n?'selected':''}>${t.n}</option>`).join('')}</select>`;
+    if(r.f==='status') return `<select class="inp" data-v="${i}">${['unread','reading','read'].map(t=>`<option ${r.val===t?'selected':''}>${t}</option>`).join('')}</select>`;
+    if(r.f==='ch') return `<select class="inp" data-v="${i}">${[...new Set(V.map(v=>v.ch))].map(t=>`<option ${r.val===t?'selected':''}>${t}</option>`).join('')}</select>`;
+    return `<input class="inp" data-v="${i}" value="${esc(r.val)}">`;
+  }
+  function draw(){
+    const vs=V.filter(v=> mode==='all'? rules.every(r=>match(v,r)) : rules.some(r=>match(v,r)));
+    root.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" class="two">
+        <div>
+          <div class="fieldlbl">Saved views</div>
+          <div style="border:1px solid var(--rule);border-radius:8px;background:var(--bg);padding:6px;margin-bottom:14px">
+            ${views.map(v=>`<div class="rail-i"><span>${esc(v.name)}</span><span class="ct">${v.n}</span></div>`).join('')||'<div class="note" style="padding:8px">none yet</div>'}
+          </div>
+          <div class="fieldlbl">Match <button class="btn sm ${mode==='all'?'acc':''}" data-m="all">ALL</button>
+            <button class="btn sm ${mode==='any'?'acc':''}" data-m="any">ANY</button> of:</div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-top:8px">
+            ${rules.map((r,i)=>`<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center">
+              <select class="inp" data-f="${i}">${FIELDS.map(f=>`<option value="${f[0]}" ${r.f===f[0]?'selected':''}>${f[1]}</option>`).join('')}</select>
+              ${valInput(r,i)}
+              <button class="btn sm gh" data-x="${i}">✕</button></div>`).join('')}
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+            <button class="btn sm" id="m5-add">+ rule</button>
+            <input class="inp" id="m5-name" placeholder="view name" style="flex:1" value="${esc(name)}">
+            <button class="btn sm acc" id="m5-save">Save view</button>
+          </div>
+        </div>
+        <div>
+          <div class="fieldlbl">Live preview — <b style="color:var(--accent)">${vs.length}</b> match</div>
+          <div style="border:1px solid var(--rule);border-radius:8px;background:var(--bg);max-height:330px;overflow:auto">
+            ${listHTML(vs,{showTopic:true,showStatus:true})}</div>
+        </div>
+      </div>`;
+    root.querySelectorAll('[data-m]').forEach(e=>e.onclick=()=>{mode=e.dataset.m;draw();});
+    root.querySelectorAll('[data-f]').forEach(e=>e.onchange=()=>{
+      const i=+e.dataset.f, f=FIELDS.find(x=>x[0]===e.value);
+      rules[i]={f:e.value,op:f[2],val:e.value==='tag'?tagList()[0]:e.value==='topic'?'AI':e.value==='status'?'unread':e.value==='ch'?V[0].ch:'30'};
+      draw();});
+    root.querySelectorAll('[data-v]').forEach(e=>e.onchange=()=>{rules[+e.dataset.v].val=e.value;draw();});
+    root.querySelectorAll('[data-x]').forEach(e=>e.onclick=()=>{rules.splice(+e.dataset.x,1);draw();});
+    root.querySelector('#m5-add').onclick=()=>{rules.push({f:'tag',op:'is',val:tagList()[0]});draw();};
+    const ni=root.querySelector('#m5-name'); ni.oninput=()=>{name=ni.value;};
+    root.querySelector('#m5-save').onclick=()=>{
+      views.push({name:name||`View ${views.length+1}`,n:vs.length}); name=''; draw();};
+  }
+  draw();
+})();
+
+/* ===================== Mock 06 — clusters ===================== */
+(function(){
+  const root=document.getElementById('m6');
+  const GEN=[
+    [["Machine learning in practice",[2,5,10]],["Personal finance & markets",[3,12]],["Making things by hand",[4,9,11]],["Health & performance",[6,13]],["Low-level programming",[7,14]],["Science & history",[1,8]]],
+    [["LLM agents & tooling",[2,5]],["Evaluation & context limits",[10]],["Markets, crises & money",[3,12]],["Woodworking",[4,11]],["Food",[9]],["Training & nutrition science",[6,13]],["Rust systems work",[7,14]],["Physics & the past",[1,8]]],
+    [["Agentic systems",[2]],["LLMs applied to finance",[5]],["Model evaluation",[10]],["Investing philosophy",[3]],["Financial history",[12,8]],["Hand tools & joinery",[4,11]],["Kitchen craft",[9]],["Endurance & metabolism",[6]],["Nutrition evidence",[13]],["Rust internals",[7,14]],["Physics explainers",[1]]],
+  ];
+  let step=0;
+  function draw(){
+    const g=GEN[step];
+    root.innerHTML=`
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+        <button class="btn acc sm" id="m6-go">Add 4 videos &amp; re-cluster</button>
+        <button class="btn sm gh" id="m6-r">reset</button>
+        <span class="note">library size ${14+step*4} · <b>${g.length}</b> clusters · generation ${step+1}/3</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px">
+        ${g.map(([name,ids])=>`
+          <div style="border:1px solid var(--rule);border-radius:9px;background:var(--bg);padding:10px 12px">
+            <div style="font-family:var(--serif);font-size:14px;margin-bottom:6px">${esc(name)}</div>
+            <div class="note" style="margin-bottom:7px">${ids.length} video${ids.length===1?'':'s'} · auto-named</div>
+            ${ids.map(i=>{const v=V.find(x=>x.id===i);return `<div style="font-size:12px;line-height:1.35;margin:4px 0;color:var(--muted)">· ${esc(v.t)}</div>`}).join('')}
+          </div>`).join('')}
+      </div>
+      ${step>0?`<div class="note" style="margin-top:12px;color:var(--accent)">⚠ Cluster names and memberships changed. Any habit or bookmark built on the previous shape is now invalid.</div>`:''}`;
+    root.querySelector('#m6-go').onclick=()=>{step=Math.min(step+1,GEN.length-1);draw();};
+    root.querySelector('#m6-r').onclick=()=>{step=0;draw();};
+  }
+  draw();
+})();
+
+/* ===================== Mock 07 — policies ===================== */
+(function(){
+  const root=document.getElementById('m7');
+  const POL=[
+    ['silent','Silent auto-apply','Everything the model returned is applied with no review. 0 clicks — and the wrong ones are now permanent facts about your library.'],
+    ['hybrid','Threshold hybrid','Existing tags ≥0.75 auto-applied. Below that, offered but off. New tags always require a click. Typically 0–1 clicks.'],
+    ['confirm','Confirm everything','Nothing is applied until you click it. 2–4 clicks, but you see your vocabulary on every single add.'],
+  ];
+  let pol='hybrid';
+  function applied(){
+    if(pol==='silent') return SAMPLE.sugg.map(t=>t.n);
+    if(pol==='confirm') return [];
+    return SAMPLE.sugg.filter(t=>!t.isNew&&t.conf>=.75).map(t=>t.n);
+  }
+  function draw(){
+    const app=applied(); const p=POL.find(x=>x[0]===pol);
+    const clicks = pol==='silent'?0 : pol==='confirm'?SAMPLE.sugg.length-1 : SAMPLE.sugg.filter(t=>!app.includes(t.n)).length;
+    root.innerHTML=`
+      <div style="display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap">
+        ${POL.map(x=>`<button class="btn sm ${pol===x[0]?'acc':''}" data-p="${x[0]}">${x[1]}</button>`).join('')}
+      </div>
+      <div style="border:1px solid var(--rule);border-radius:9px;background:var(--bg);padding:14px 16px">
+        <div class="note" style="margin-bottom:10px">${esc(p[2])}</div>
+        <div class="fieldlbl">Model returned</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+          ${SAMPLE.sugg.map(t=>chip(t,app.includes(t.n))).join('')}
+        </div>
+        <div class="fieldlbl">Ends up on the video</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${app.length?app.map(n=>`<span class="pill on">${esc(n)}</span>`).join(''):'<span class="note">nothing until you click</span>'}
+        </div>
+        <div style="margin-top:14px;display:flex;gap:22px;flex-wrap:wrap">
+          <div><div class="fieldlbl">Clicks per add</div><div style="font-family:var(--mono);font-size:20px">${clicks}</div></div>
+          <div><div class="fieldlbl">New tags created without review</div>
+            <div style="font-family:var(--mono);font-size:20px;color:${pol==='silent'?'var(--bad)':'var(--good)'}">${pol==='silent'?SAMPLE.sugg.filter(t=>t.isNew).length:0}</div></div>
+          <div><div class="fieldlbl">Vocabulary stays visible to you</div>
+            <div style="font-family:var(--mono);font-size:20px;color:${pol==='silent'?'var(--bad)':'var(--good)'}">${pol==='silent'?'no':'yes'}</div></div>
+        </div>
+      </div>`;
+    root.querySelectorAll('[data-p]').forEach(e=>e.onclick=()=>{pol=e.dataset.p;draw();});
+  }
+  draw();
+})();
+
+/* ===================== Mock 08 — tag manager ===================== */
+(function(){
+  const root=document.getElementById('m8');
+  let data = JSON.parse(JSON.stringify(V));
+  let sel=new Set(), msg='';
+  const counts=()=>{const m={};data.forEach(v=>v.tags.forEach(t=>m[t]=(m[t]||0)+1));return m;};
+  function draw(){
+    const c=counts(); const keys=Object.keys(c).sort((a,b)=>c[b]-c[a]||a.localeCompare(b));
+    const orphans=keys.filter(k=>c[k]===1);
+    const untagged=data.filter(v=>!v.tags.length).length;
+    root.innerHTML=`
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn sm ${sel.size===2?'acc':''}" id="m8-merge" ${sel.size===2?'':'disabled'}>Merge ${sel.size===2?[...sel].map(esc).join(' → '):'(pick 2)'}</button>
+        <button class="btn sm" id="m8-del" ${sel.size?'':'disabled'}>Delete ${sel.size||''}</button>
+        <button class="btn sm gh" id="m8-orph">Select ${orphans.length} orphan${orphans.length===1?'':'s'}</button>
+        <span class="note" style="margin-left:auto">${keys.length} tags · ${untagged} untagged videos${msg?` · <b style="color:var(--accent)">${esc(msg)}</b>`:''}</span>
+      </div>
+      <div class="tbl-scroll"><table><thead><tr><th style="width:34px"></th><th>Tag</th><th style="width:80px">Videos</th><th>Also appears with</th><th style="width:150px"></th></tr></thead><tbody>
+        ${keys.map(k=>{
+          const co=new Set(); data.forEach(v=>{if(v.tags.includes(k))v.tags.forEach(t=>{if(t!==k)co.add(t)})});
+          return `<tr style="${sel.has(k)?'background:var(--surface-2)':''}">
+            <td><input type="checkbox" data-c="${k}" ${sel.has(k)?'checked':''}></td>
+            <td><span class="pill ${c[k]===1?'new':''}" data-ren="${k}" style="cursor:text" title="double-click to rename">${esc(k)}</span></td>
+            <td style="font-family:var(--mono)">${c[k]}</td>
+            <td style="color:var(--muted);font-size:12px">${[...co].slice(0,5).map(esc).join(', ')||'—'}</td>
+            <td>${c[k]>=4?`<button class="btn sm" data-pro="${k}">↑ promote to Topic</button>`:''}</td></tr>`;
+        }).join('')}
+      </tbody></table></div>
+      <div class="note" style="margin-top:10px">Dashed = used once. "Promote to Topic" appears at ≥4 uses here; in the real thing you'd set it ~15.</div>`;
+    root.querySelectorAll('[data-c]').forEach(e=>e.onchange=()=>{
+      const k=e.dataset.c; e.checked?sel.add(k):sel.delete(k); msg=''; draw();});
+    root.querySelectorAll('[data-ren]').forEach(e=>e.ondblclick=()=>{
+      const old=e.dataset.ren; const nn=prompt(`Rename "${old}" to:`, old);
+      if(nn&&nn.trim()&&nn!==old){ const n=nn.trim().toLowerCase();
+        data.forEach(v=>{v.tags=[...new Set(v.tags.map(t=>t===old?n:t))]});
+        msg=`renamed ${old} → ${n} across the library`; sel.delete(old); draw(); }});
+    root.querySelector('#m8-merge').onclick=()=>{
+      const [a,b]=[...sel];
+      data.forEach(v=>{ if(v.tags.includes(a)) v.tags=[...new Set(v.tags.map(t=>t===a?b:t))]; });
+      msg=`merged ${a} into ${b}`; sel=new Set(); draw();};
+    root.querySelector('#m8-del').onclick=()=>{
+      const n=sel.size; data.forEach(v=>{v.tags=v.tags.filter(t=>!sel.has(t))});
+      msg=`deleted ${n} tag${n===1?'':'s'}`; sel=new Set(); draw();};
+    root.querySelector('#m8-orph').onclick=()=>{
+      const c2=counts(); sel=new Set(Object.keys(c2).filter(k=>c2[k]===1)); msg=''; draw();};
+  }
+  draw();
+})();
+
+/* ===================== Mock 09 — provenance + normalization ===================== */
+(function(){
+  const root=document.getElementById('m9');
+  const norm = s => s.toLowerCase().replace(/[ \-_]/g,'');
+  const AI_GENS=[
+    [{n:'llm',c:.94},{n:'investing',c:.88},{n:'agents',c:.71}],
+    [{n:'llm',c:.93},{n:'investing',c:.9},{n:'api-design',c:.66}],
+    [{n:'agents',c:.87},{n:'llm',c:.95},{n:'portfolio-management',c:.6}],
+  ];
+  let gen=0, human=['worth-rewatching'], msg='';
+  function draw(){
+    const ai=AI_GENS[gen%AI_GENS.length];
+    const hn=human.map(norm);
+    const aiShown=ai.filter(t=>!hn.includes(norm(t.n)));   // human wins on collision
+    root.innerHTML=`
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+        <button class="btn sm acc" id="m9-run">Re-run AI tagger</button>
+        <input class="inp" id="m9-add" placeholder="add your own tag — try &quot;Machine Learning&quot; then &quot;machine-learning&quot;" style="flex:1;min-width:230px">
+        <span class="note">${msg?`<b style="color:var(--accent)">${esc(msg)}</b>`:`run #${gen+1}`}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" class="two">
+        <div style="border:1px solid var(--rule);border-radius:9px;background:var(--bg);padding:12px 14px">
+          <div class="fieldlbl" style="color:var(--good)">Your tags — never touched by the tagger</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px">
+            ${human.length?human.map(t=>`<span class="pill on" style="background:var(--good)">${esc(t)}
+              <b class="click" data-rm="${esc(t)}" style="cursor:pointer;margin-left:5px;opacity:.75">✕</b></span>`).join('')
+              :'<span class="note">none yet</span>'}
+          </div>
+        </div>
+        <div style="border:1px solid var(--rule);border-radius:9px;background:var(--bg);padding:12px 14px">
+          <div class="fieldlbl">AI tags — wiped and replaced on every run</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px">
+            ${aiShown.map(t=>`<span class="pill" style="display:inline-flex;align-items:center;gap:6px">${esc(t.n)}
+              <span class="conf"><i style="width:${Math.round(t.c*100)}%"></i></span></span>`).join('')}
+          </div>
+          ${ai.length!==aiShown.length?`<div class="note" style="margin-top:8px">
+            ${ai.length-aiShown.length} suppressed — normalizes to a tag you already set by hand.</div>`:''}
+        </div>
+      </div>
+      <div class="note" style="margin-top:12px">Stored identity is <code>normalizedName = lower(name) with space/-/_ stripped</code>, so
+        <code>Machine Learning</code> · <code>machine-learning</code> · <code>machine_learning</code> are one tag.</div>`;
+    root.querySelector('#m9-run').onclick=()=>{gen++;msg='AI rows replaced, your tags untouched';draw();};
+    const inp=root.querySelector('#m9-add');
+    inp.onkeydown=(e)=>{
+      if(e.key!=='Enter'||!inp.value.trim()) return;
+      const v=inp.value.trim();
+      if(human.some(t=>norm(t)===norm(v))){ msg=`"${v}" normalizes onto an existing tag — not added`; }
+      else { human.push(v); msg=`added "${v}" as a human tag`; }
+      draw();
+    };
+    root.querySelectorAll('[data-rm]').forEach(e=>e.onclick=()=>{
+      human=human.filter(t=>t!==e.dataset.rm); msg=''; draw();});
+  }
+  draw();
+})();
+
+/* ===================== theme ===================== */
+(function(){
+  const b=document.getElementById('themebtn');
+  const set=(t)=>{document.documentElement.setAttribute('data-theme',t);b.textContent=t==='paper'?'DARK':'PAPER';};
+  b.onclick=()=>set(document.documentElement.getAttribute('data-theme')==='paper'?'dark':'paper');
+  if(matchMedia('(prefers-color-scheme: dark)').matches) set('dark');
+})();
+</script>
+</body>
+</html>
