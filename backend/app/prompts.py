@@ -101,11 +101,20 @@ links:            1-3 independent sources, stable URLs
   prominent entries once you run out of room. Group them under headings that
   say what the group is.
 
+# LANGUAGE
+- Always write the deck in English, even when the transcript is in another
+  language. Translate claims, quotes, and labels; keep names and titles as they
+  appear.
+- Auto-generated transcripts have no punctuation or speaker turns and misspell
+  names. Read through the noise, and drop any claim, number, or quote the text
+  does not clearly support.
+
 # INPUT
 You will receive:
   CHANNEL:      {channel name or "one-shot"}
   TITLE:        {original video title}
   DURATION:     {hh:mm:ss}
+  LANGUAGE:     {transcript language; may be absent}
   INSTRUCTIONS: {optional reader directive; may be absent}
   TRANSCRIPT:   {full transcript or detailed notes}
 

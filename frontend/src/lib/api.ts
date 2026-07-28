@@ -8,6 +8,11 @@ export type SlidesResponse = {
   video_id: string
   deck: Deck
   duration_seconds: number
+  language: string
+  language_code: string
+  is_generated: boolean
+  /** true when no requested-language track existed and another one was used */
+  language_fallback: boolean
   transcript: TranscriptSnippet[]
 }
 
