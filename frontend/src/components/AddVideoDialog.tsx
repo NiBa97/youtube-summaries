@@ -41,6 +41,7 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
   const [title, setTitle] = useState('')
   const [instructions, setInstructions] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -50,6 +51,7 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
       setTitle('')
       setInstructions('')
       setError(null)
+      setNotice(null)
       setBusy(false)
       setTimeout(() => inputRef.current?.focus(), 30)
     }
@@ -67,7 +69,7 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
   if (!open) return null
 
   const submit = async () => {
-    if (busy) return
+    if (busy || notice) return
     const id = parseYouTubeId(url)
     if (!id) {
       setError('Could not parse a YouTube video ID from that URL.')
@@ -93,7 +95,15 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
         instructions: userInstructions,
       })
       onAdd(video)
-      onClose()
+      if (resp.language_fallback) {
+        // Video is saved; keep the dialog up so the language caveat is seen.
+        setNotice(
+          `Added. This video has no English subtitles, so the ${resp.language} track was used ` +
+            `and the summary was translated — expect it to be less precise than usual.`,
+        )
+      } else {
+        onClose()
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to generate slides')
     } finally {
@@ -218,6 +228,23 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
             </span>
           </Field>
 
+          {notice && (
+            <div
+              style={{
+                fontFamily: 'var(--mono)',
+                fontSize: 11,
+                color: 'var(--ink)',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--rule)',
+                padding: '8px 10px',
+                borderRadius: 6,
+                lineHeight: 1.5,
+              }}
+            >
+              {notice}
+            </div>
+          )}
+
           {error && (
             <div
               style={{
@@ -250,12 +277,20 @@ export function AddVideoDialog({ open, onClose, onAdd }: Props) {
             background: 'var(--bg)',
           }}
         >
-          <Btn onClick={onClose} kind="ghost">
-            Cancel
-          </Btn>
-          <Btn onClick={submit} kind="accent" icon="plus">
-            {busy ? 'Generating…' : 'Add video'}
-          </Btn>
+          {notice ? (
+            <Btn onClick={onClose} kind="accent">
+              Done
+            </Btn>
+          ) : (
+            <>
+              <Btn onClick={onClose} kind="ghost">
+                Cancel
+              </Btn>
+              <Btn onClick={submit} kind="accent" icon="plus">
+                {busy ? 'Generating…' : 'Add video'}
+              </Btn>
+            </>
+          )}
         </div>
       </div>
     </div>

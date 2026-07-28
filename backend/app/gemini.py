@@ -46,6 +46,7 @@ def generate_deck(
     title: str,
     duration: str,
     transcript_text: str,
+    transcript_language: str | None = None,
     instructions: str | None = None,
     validate: Callable[[dict[str, Any]], str | None] | None = None,
 ) -> dict[str, Any]:
@@ -59,10 +60,15 @@ def generate_deck(
     if instructions and instructions.strip():
         instruction_line = f"INSTRUCTIONS: {instructions.strip()}\n"
 
+    language_line = ""
+    if transcript_language and transcript_language.strip():
+        language_line = f"LANGUAGE:     {transcript_language.strip()}\n"
+
     user_input = (
         f"CHANNEL:      {channel}\n"
         f"TITLE:        {title}\n"
         f"DURATION:     {duration}\n"
+        f"{language_line}"
         f"{instruction_line}"
         f"TRANSCRIPT:\n{transcript_text}\n"
     )

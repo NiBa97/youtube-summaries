@@ -162,6 +162,7 @@ class TranscriptResponse(BaseModel):
     language: str
     language_code: str
     is_generated: bool
+    language_fallback: bool = False
     snippets: list[TranscriptSnippet]
 
 
@@ -220,26 +221,42 @@ def link_preview(url: str) -> LinkPreviewResponse:
     )
 
 
+def _fetch_transcript(video_id: str, languages: list[str]) -> tuple[Any, bool]:
+    """Fetch a transcript in one of `languages`, else fall back to whatever the
+    video actually has. Returns (fetched, used_fallback).
+
+    Many videos carry no English track at all; failing there was the main cause
+    of add-video errors. Prefer a human-made track over an auto-generated one.
+    """
+    api = YouTubeTranscriptApi()
+    try:
+        try:
+            return api.fetch(video_id, languages=languages), False
+        except NoTranscriptFound:
+            available = list(api.list(video_id))
+            if not available:
+                raise
+            chosen = next((t for t in available if not t.is_generated), available[0])
+            return chosen.fetch(), True
+    except (TranscriptsDisabled, NoTranscriptFound, VideoUnavailable) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Transcript fetch failed: {exc}") from exc
+
+
 @app.post("/transcript", response_model=TranscriptResponse)
 def get_transcript(req: TranscriptRequest) -> TranscriptResponse:
     video_id = extract_video_id(req.url)
     languages = req.languages or ["en"]
 
-    api = YouTubeTranscriptApi()
-    try:
-        fetched = api.fetch(video_id, languages=languages)
-    except (TranscriptsDisabled, NoTranscriptFound) as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except VideoUnavailable as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Transcript fetch failed: {exc}") from exc
+    fetched, used_fallback = _fetch_transcript(video_id, languages)
 
     return TranscriptResponse(
         video_id=fetched.video_id,
         language=fetched.language,
         language_code=fetched.language_code,
         is_generated=fetched.is_generated,
+        language_fallback=used_fallback,
         snippets=[
             TranscriptSnippet(text=s.text, start=s.start, duration=s.duration)
             for s in fetched.snippets
@@ -266,6 +283,10 @@ class SlidesResponse(BaseModel):
     video_id: str
     deck: Deck
     duration_seconds: int
+    language: str
+    language_code: str
+    is_generated: bool
+    language_fallback: bool = False
     transcript: list[TranscriptSnippet]
 
 
@@ -288,15 +309,7 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
     video_id = extract_video_id(req.url)
     languages = req.languages or ["en"]
 
-    api = YouTubeTranscriptApi()
-    try:
-        fetched = api.fetch(video_id, languages=languages)
-    except (TranscriptsDisabled, NoTranscriptFound) as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except VideoUnavailable as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Transcript fetch failed: {exc}") from exc
+    fetched, used_fallback = _fetch_transcript(video_id, languages)
 
     transcript_text = format_snippets_for_llm(fetched.snippets)
     duration_s = _duration_seconds(fetched.snippets)
@@ -306,6 +319,7 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
             title=req.title or f"YouTube {video_id}",
             duration=_fmt_duration(duration_s),
             transcript_text=transcript_text,
+            transcript_language=fetched.language,
             instructions=req.instructions,
             validate=_deck_validation_error,
         )
@@ -320,6 +334,10 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
         video_id=fetched.video_id,
         deck=deck,
         duration_seconds=duration_s,
+        language=fetched.language,
+        language_code=fetched.language_code,
+        is_generated=fetched.is_generated,
+        language_fallback=used_fallback,
         transcript=[
             TranscriptSnippet(text=s.text, start=s.start, duration=s.duration)
             for s in fetched.snippets
