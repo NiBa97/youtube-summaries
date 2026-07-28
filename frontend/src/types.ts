@@ -39,6 +39,23 @@ export type Deck = {
   summary?: Summary
 }
 
+/** Both tiers of the library vocabulary live in one collection, discriminated
+ *  by `kind`, so promoting a tag to a Topic is a flag flip, not a data move. */
+export type TagKind = 'topic' | 'tag'
+
+export type Tag = {
+  id: string
+  name: string
+  norm: string
+  kind: TagKind
+  color?: string
+  sort?: number
+}
+
+/** tag record id -> who attached it. A bad auto-tagging run is one filter away
+ *  from being reverted wholesale. */
+export type TagSource = Record<string, 'ai' | 'human'>
+
 export type Video = {
   id: string
   channelId: string | null
@@ -51,7 +68,10 @@ export type Video = {
   youtubeId: string
   status: Status
   starred: boolean
+  topicId: string | null
+  tagIds: string[]
   tags: string[]
+  tagSource: TagSource
   readingTime: number
   sourceUrl?: string
   tldr?: string
@@ -72,4 +92,10 @@ export type RenderedSlide = Slide & { _idx: number; _total: number }
 export type Filters = {
   q: string
   channelId: string | null
+  topicId: string | null
+  tagIds: string[]
+  /** How multiple selected tags combine. 'all' narrows, 'any' widens. */
+  tagMode: 'all' | 'any'
+  unreadOnly: boolean
+  starredOnly: boolean
 }

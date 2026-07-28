@@ -4,7 +4,7 @@ type IconName =
   | 'search' | 'plus' | 'settings' | 'star' | 'play' | 'arrowRight' | 'arrowLeft'
   | 'close' | 'expand' | 'collapse' | 'check' | 'eye' | 'eyeOff' | 'annotate'
   | 'tag' | 'rss' | 'grid' | 'list' | 'minimal' | 'home' | 'pause' | 'sliders'
-  | 'edit' | 'download'
+  | 'edit' | 'download' | 'inbox'
 
 const PATHS: Record<IconName, ReactElement> = {
   search: <path d="M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14ZM21 21l-5-5" />,
@@ -31,6 +31,7 @@ const PATHS: Record<IconName, ReactElement> = {
   sliders: <path d="M4 6h11M19 6h1M4 12h5M13 12h7M4 18h13M21 18h-1M15 4v4M9 10v4M17 16v4" />,
   edit: <path d="m4 20 4-1 11-11-3-3L5 16l-1 4Z" />,
   download: <path d="M12 4v12m0 0l-5-5m5 5l5-5M4 20h16" />,
+  inbox: <><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z" /></>,
 }
 
 type IconProps = {

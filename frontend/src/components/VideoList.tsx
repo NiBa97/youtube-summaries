@@ -1,23 +1,18 @@
-import { useMemo, type MouseEvent } from 'react'
-import type { Channel, Video } from '../types'
-import { ChannelDot, PillTag, StatusDot } from './atoms'
+import { type MouseEvent } from 'react'
+import type { Tag, Video } from '../types'
+import { PillTag, StatusDot, TopicDot } from './atoms'
 import { VideoThumb } from './VideoThumb'
 import { fmtRelative } from '../lib/format'
 
 type Props = {
   videos: Video[]
-  channels: Channel[]
+  tagById: Map<string, Tag>
   selectedId: string | null
   onSelect: (id: string) => void
   onToggleStar: (id: string) => void
 }
 
-export function VideoList({ videos, channels, selectedId, onSelect, onToggleStar }: Props) {
-  const channelById = useMemo(
-    () => Object.fromEntries(channels.map((c) => [c.id, c])) as Record<string, Channel>,
-    [channels],
-  )
-
+export function VideoList({ videos, tagById, selectedId, onSelect, onToggleStar }: Props) {
   if (videos.length === 0) {
     return (
       <div
@@ -36,27 +31,23 @@ export function VideoList({ videos, channels, selectedId, onSelect, onToggleStar
 
   return (
     <div style={{ padding: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {videos.map((v) => {
-        const ch = v.channelId ? channelById[v.channelId] : null
-        const isSelected = v.id === selectedId
-        return (
-          <RowItem
-            key={v.id}
-            v={v}
-            ch={ch}
-            isSelected={isSelected}
-            onSelect={onSelect}
-            onToggleStar={onToggleStar}
-          />
-        )
-      })}
+      {videos.map((v) => (
+        <RowItem
+          key={v.id}
+          v={v}
+          topic={(v.topicId && tagById.get(v.topicId)) || null}
+          isSelected={v.id === selectedId}
+          onSelect={onSelect}
+          onToggleStar={onToggleStar}
+        />
+      ))}
     </div>
   )
 }
 
 type ItemProps = {
   v: Video
-  ch: Channel | null
+  topic: Tag | null
   isSelected: boolean
   onSelect: (id: string) => void
   onToggleStar: (id: string) => void
@@ -88,7 +79,7 @@ function StarBtn({ v, onToggleStar }: { v: Video; onToggleStar: (id: string) => 
   )
 }
 
-function RowItem({ v, ch, isSelected, onSelect, onToggleStar }: ItemProps) {
+function RowItem({ v, topic, isSelected, onSelect, onToggleStar }: ItemProps) {
   const thumbW = 116
   const thumbH = Math.round((thumbW * 9) / 16)
   return (
@@ -116,7 +107,7 @@ function RowItem({ v, ch, isSelected, onSelect, onToggleStar }: ItemProps) {
       <div style={{ paddingTop: 6 }}>
         <StatusDot status={v.status} />
       </div>
-      <VideoThumb video={v} channel={ch} width={thumbW} height={thumbH} />
+      <VideoThumb video={v} tint={topic?.color} width={thumbW} height={thumbH} />
       <div style={{ minWidth: 0 }}>
         <div
           style={{
@@ -133,8 +124,10 @@ function RowItem({ v, ch, isSelected, onSelect, onToggleStar }: ItemProps) {
           }}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden' }}>
-            <ChannelDot channel={ch} size={12} />
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch ? ch.name : 'one-shot'}</span>
+            <TopicDot topic={topic} size={10} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {topic ? topic.name : 'unfiled'}
+            </span>
           </span>
           <span>{fmtRelative(v.publishedAt)}</span>
         </div>
