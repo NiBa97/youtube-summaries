@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, type DragEvent } from 'react'
 import type { Filters, Tag, Video } from '../types'
 import { Icon, type IconName } from './Icon'
 
@@ -9,11 +9,20 @@ type Props = {
   setFilters: (f: Filters | ((prev: Filters) => Filters)) => void
   onAddVideo: () => void
   onManageTags: () => void
+  /** Id of the video currently being dragged out of the list, or null. Drop
+   *  targets only light up for a real video drag, not for text or files. */
+  draggingVideoId: string | null
+  /** topicId is null when the video is dropped on Unfiled, i.e. taken off its shelf. */
+  onDropOnTopic: (videoId: string, topicId: string | null) => void
 }
 
 /** Pseudo-topic id for videos with no topic, so "Unfiled" is a first-class
  *  shelf instead of an invisible remainder. */
 export const UNFILED = '__unfiled__'
+
+/** Mime type carrying the dragged video's record id. A custom type means a
+ *  stray text drop from another app can never be mistaken for a filing. */
+export const VIDEO_DND_TYPE = 'application/x-reel-video-id'
 
 /**
  * Two-tier rail. Topics are the shelves - exactly one per video, always visible.
@@ -24,7 +33,17 @@ export const UNFILED = '__unfiled__'
  * Styling lives in index.css under `.fr-*` because the hover states need real
  * CSS rather than the inline styles the rest of the app uses.
  */
-export function FilterRail({ tags, videos, filters, setFilters, onAddVideo, onManageTags }: Props) {
+export function FilterRail({
+  tags,
+  videos,
+  filters,
+  setFilters,
+  onAddVideo,
+  onManageTags,
+  draggingVideoId,
+  onDropOnTopic,
+}: Props) {
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null)
   const topics = useMemo(
     () => tags.filter((t) => t.kind === 'topic').sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0) || a.name.localeCompare(b.name)),
     [tags],
@@ -81,6 +100,41 @@ export function FilterRail({ tags, videos, filters, setFilters, onAddVideo, onMa
 
   const hasFilter = !!filters.topicId || filters.tagIds.length > 0 || filters.unreadOnly || filters.starredOnly
 
+  // Dropping a video on the shelf it already sits on is a no-op, so that row
+  // says "you are already here" rather than silently refusing the drop.
+  const draggingVideo = draggingVideoId ? videos.find((v) => v.id === draggingVideoId) || null : null
+  const isHomeShelf = (rowId: string) => !!draggingVideo && (draggingVideo.topicId || UNFILED) === rowId
+  const canDropOn = (rowId: string) => !!draggingVideo && !isHomeShelf(rowId)
+
+  const dropProps = (rowId: string) => ({
+    onDragOver: (e: DragEvent<HTMLButtonElement>) => {
+      if (!canDropOn(rowId)) return
+      // Without preventDefault the browser refuses the drop outright.
+      e.preventDefault()
+      e.dataTransfer.dropEffect = 'move'
+      // dragover fires continuously; only touch state on a real change.
+      setDropTargetId((cur) => (cur === rowId ? cur : rowId))
+    },
+    onDragLeave: (e: DragEvent<HTMLButtonElement>) => {
+      // dragleave also fires when the cursor crosses between the row's own
+      // children, which would strobe the highlight. Only a leave that lands
+      // outside the row counts as leaving it.
+      const next = e.relatedTarget as Node | null
+      if (next && e.currentTarget.contains(next)) return
+      setDropTargetId((cur) => (cur === rowId ? null : cur))
+    },
+    onDrop: (e: DragEvent<HTMLButtonElement>) => {
+      e.preventDefault()
+      setDropTargetId(null)
+      const id = e.dataTransfer.getData(VIDEO_DND_TYPE) || draggingVideoId
+      if (id) onDropOnTopic(id, rowId === UNFILED ? null : rowId)
+    },
+  })
+
+  // Derived, not stored: a drag that ends off-target (Escape, drop on dead
+  // space) never fires dragleave, and a stale highlight would linger.
+  const dropTarget = draggingVideoId ? dropTargetId : null
+
   return (
     <div className="fr">
       <div className="fr-header">
@@ -131,8 +185,17 @@ export function FilterRail({ tags, videos, filters, setFilters, onAddVideo, onMa
           <div className="fr-rows">
             {topics.map((t) => {
               const on = filters.topicId === t.id
+              const dropping = dropTarget === t.id
+              const home = isHomeShelf(t.id)
               return (
-                <button key={t.id} className={`fr-row${on ? ' on' : ''}`} onClick={() => setTopic(t.id)}>
+                <button
+                  key={t.id}
+                  className={`fr-row${on ? ' on' : ''}${dropping ? ' drop' : ''}${home ? ' here' : ''}`}
+                  onClick={() => setTopic(t.id)}
+                  data-topic-id={t.id}
+                  title={home ? `Already in ${t.name}` : undefined}
+                  {...dropProps(t.id)}
+                >
                   <span className="fr-lead">
                     <span className="fr-dot" style={{ background: t.color || 'var(--rule-strong)' }} />
                   </span>
@@ -142,11 +205,19 @@ export function FilterRail({ tags, videos, filters, setFilters, onAddVideo, onMa
               )
             })}
 
-            {unfiledCount > 0 && (
+            {/* While a filed video is in flight, Unfiled appears even at zero so
+                there is always somewhere to drop it to take it off its shelf. */}
+            {(unfiledCount > 0 || canDropOn(UNFILED)) && (
               <button
-                className={`fr-row fr-unfiled${filters.topicId === UNFILED ? ' on' : ''}`}
+                className={`fr-row fr-unfiled${filters.topicId === UNFILED ? ' on' : ''}${dropTarget === UNFILED ? ' drop' : ''}${isHomeShelf(UNFILED) ? ' here' : ''}`}
                 onClick={() => setTopic(UNFILED)}
-                title={`${unfiledCount} video${unfiledCount === 1 ? '' : 's'} with no topic yet`}
+                title={
+                  isHomeShelf(UNFILED)
+                    ? 'Already unfiled'
+                    : `${unfiledCount} video${unfiledCount === 1 ? '' : 's'} with no topic yet`
+                }
+                data-topic-id={UNFILED}
+                {...dropProps(UNFILED)}
               >
                 <span className="fr-lead">
                   <Icon name="inbox" size={17} strokeWidth={1.7} />
