@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { listVideos, updateVideo } from './lib/pb'
 import { listTags } from './lib/tags'
-import type { Filters, Tag, Video } from './types'
+import type { Filters, Tag, TagSource, Video } from './types'
 import { FilterRail, UNFILED } from './components/FilterRail'
 import { ListToolbar } from './components/ListToolbar'
 import { VideoList } from './components/VideoList'
@@ -30,6 +30,7 @@ function App() {
   const [addOpen, setAddOpen] = useState(false)
   const [tagsOpen, setTagsOpen] = useState(false)
   const [jumpStart, setJumpStart] = useState<number | null>(null)
+  const [draggingVideoId, setDraggingVideoId] = useState<string | null>(null)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', 'paper')
@@ -101,6 +102,31 @@ function App() {
     })
   }
 
+  /**
+   * Drag-and-drop filing: move a video onto a Topic shelf (or off it, when
+   * dropped on Unfiled). Optimistic, with a rollback on failure, because the
+   * whole point of the gesture is that filing feels free.
+   */
+  const moveToTopic = (id: string, topicId: string | null) => {
+    // End the drag here rather than waiting for dragend, or the target row
+    // flashes its "already here" marker for a frame on the way out.
+    setDraggingVideoId(null)
+    const current = videos.find((v) => v.id === id)
+    if (!current || (current.topicId || null) === topicId) return
+
+    // Provenance mirrors the tag bar: a hand-dragged topic is human-attached,
+    // and the topic it left stops being recorded unless it is also a tag.
+    const tagSource: TagSource = { ...current.tagSource }
+    if (current.topicId && !current.tagIds.includes(current.topicId)) delete tagSource[current.topicId]
+    if (topicId) tagSource[topicId] = 'human'
+
+    setVideos((vs) => vs.map((v) => (v.id === id ? { ...v, topicId, tagSource } : v)))
+    updateVideo(id, { topic: topicId, tag_source: tagSource }).catch((e) => {
+      console.error('move to topic failed', e)
+      setVideos((vs) => vs.map((v) => (v.id === id ? current : v)))
+    })
+  }
+
   const onSelect = (id: string) => {
     setSelectedId(id)
     setJumpStart(null)
@@ -128,6 +154,8 @@ function App() {
             setFilters={setFilters}
             onAddVideo={() => setAddOpen(true)}
             onManageTags={() => setTagsOpen(true)}
+            draggingVideoId={draggingVideoId}
+            onDropOnTopic={moveToTopic}
           />
         </Panel>
         <Separator className="rs-sep rs-sep-h" />
@@ -148,6 +176,8 @@ function App() {
                 selectedId={selectedId}
                 onSelect={onSelect}
                 onToggleStar={toggleStar}
+                onDragStart={setDraggingVideoId}
+                onDragEnd={() => setDraggingVideoId(null)}
               />
             </div>
           </div>

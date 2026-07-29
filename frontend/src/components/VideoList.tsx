@@ -1,8 +1,9 @@
-import { type MouseEvent } from 'react'
+import { type DragEvent, type MouseEvent } from 'react'
 import type { Tag, Video } from '../types'
 import { PillTag, StatusDot, TopicDot } from './atoms'
 import { VideoThumb } from './VideoThumb'
 import { fmtRelative } from '../lib/format'
+import { VIDEO_DND_TYPE } from './FilterRail'
 
 type Props = {
   videos: Video[]
@@ -10,9 +11,11 @@ type Props = {
   selectedId: string | null
   onSelect: (id: string) => void
   onToggleStar: (id: string) => void
+  onDragStart: (id: string) => void
+  onDragEnd: () => void
 }
 
-export function VideoList({ videos, tagById, selectedId, onSelect, onToggleStar }: Props) {
+export function VideoList({ videos, tagById, selectedId, onSelect, onToggleStar, onDragStart, onDragEnd }: Props) {
   if (videos.length === 0) {
     return (
       <div
@@ -39,6 +42,8 @@ export function VideoList({ videos, tagById, selectedId, onSelect, onToggleStar 
           isSelected={v.id === selectedId}
           onSelect={onSelect}
           onToggleStar={onToggleStar}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
         />
       ))}
     </div>
@@ -51,6 +56,8 @@ type ItemProps = {
   isSelected: boolean
   onSelect: (id: string) => void
   onToggleStar: (id: string) => void
+  onDragStart: (id: string) => void
+  onDragEnd: () => void
 }
 
 function StarBtn({ v, onToggleStar }: { v: Video; onToggleStar: (id: string) => void }) {
@@ -79,12 +86,26 @@ function StarBtn({ v, onToggleStar }: { v: Video; onToggleStar: (id: string) => 
   )
 }
 
-function RowItem({ v, topic, isSelected, onSelect, onToggleStar }: ItemProps) {
+function RowItem({ v, topic, isSelected, onSelect, onToggleStar, onDragStart, onDragEnd }: ItemProps) {
   const thumbW = 116
   const thumbH = Math.round((thumbW * 9) / 16)
+
+  // A row is the drag handle: pick it up anywhere and drop it on a Topic in the
+  // rail to file it. text/plain rides along so a drop outside the app is sane.
+  const dragStart = (e: DragEvent<HTMLDivElement>) => {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData(VIDEO_DND_TYPE, v.id)
+    e.dataTransfer.setData('text/plain', v.title)
+    onDragStart(v.id)
+  }
+
   return (
     <div
       onClick={() => onSelect(v.id)}
+      draggable
+      onDragStart={dragStart}
+      onDragEnd={onDragEnd}
+      data-video-id={v.id}
       style={{
         padding: '12px 12px',
         borderRadius: 8,

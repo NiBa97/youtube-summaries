@@ -332,6 +332,50 @@ button {
   color: var(--bg);
   opacity: 0.75;
 }
+/* Drop target for a video dragged out of the list. Deliberately louder than
+   :hover — the pointer is already busy, so the row has to claim the drop. */
+.fr-row.drop,
+.fr-row.on.drop {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  box-shadow: inset 0 0 0 2px var(--accent);
+  color: var(--ink);
+}
+.fr-row.on.drop .fr-n {
+  color: var(--muted);
+  opacity: 1;
+}
+.fr-row.drop .fr-label {
+  font-weight: 600;
+}
+
+/* The shelf the dragged video already sits on. It refuses the drop, so it has
+   to say why instead of just going dead under the cursor. */
+.fr-row.here {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 42%, transparent);
+}
+.fr-row.here::after {
+  content: 'HERE';
+  flex: 0 0 auto;
+  margin-left: 8px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+/* Count and badge step aside so the marker never crowds a long topic name. */
+.fr-row.here .fr-n,
+.fr-row.here .fr-badge {
+  display: none;
+}
+.fr-row.on.here {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--bg) 65%, transparent);
+}
+.fr-row.on.here::after {
+  color: var(--bg);
+}
+
 .fr-dot {
   width: 10px;
   height: 10px;
