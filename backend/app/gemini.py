@@ -11,7 +11,7 @@ from google.genai import types
 
 from .prompts import CLASSIFY_SYSTEM_PROMPT, DECK_SYSTEM_PROMPT, VOCABULARY_SYSTEM_PROMPT
 
-_MODEL_NAME = "gemini-2.5-flash"
+_MODEL_NAME = "gemini-3.1-flash-lite"
 
 # One generation plus this many correction rounds before giving up.
 _MAX_REPAIR_ATTEMPTS = 2
