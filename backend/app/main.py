@@ -15,6 +15,8 @@ from youtube_transcript_api._errors import (
     VideoUnavailable,
 )
 
+from .comment_format import format_comments_for_llm
+from .comments import Comment, CommentsError, fetch_top_comments
 from .gemini import NO_TOPIC, classify_video, generate_deck
 from .link_preview import LinkPreviewError, fetch_preview
 from .transcript_format import format_snippets_for_llm
@@ -43,6 +45,15 @@ class TranscriptSnippet(BaseModel):
     duration: float
 
 
+class VideoComment(BaseModel):
+    text: str
+    likes: int
+    replies: int
+    heart: bool
+    author: str
+    published: str
+
+
 class TimelineBlockItem(BaseModel):
     marker: str
     text: str
@@ -59,6 +70,7 @@ class ClaimBlock(BaseModel):
     eyebrow: str | None = None
     title: str
     body: str
+    caveat: str | None = None
     source_start: int | None = None
     links: list[BlockLink] | None = None
 
@@ -67,6 +79,7 @@ class ListBlock(BaseModel):
     type: Literal["list"]
     eyebrow: str | None = None
     title: str
+    caveat: str | None = None
     source_start: int | None = None
     links: list[BlockLink] | None = None
     items: list[str] = Field(..., min_length=2, max_length=5)
@@ -78,6 +91,7 @@ class MetricBlock(BaseModel):
     value: str
     label: str
     body: str | None = None
+    caveat: str | None = None
     source_start: int | None = None
     links: list[BlockLink] | None = None
 
@@ -87,6 +101,7 @@ class QuoteBlock(BaseModel):
     eyebrow: str | None = None
     text: str
     attribution: str
+    caveat: str | None = None
     source_start: int | None = None
     links: list[BlockLink] | None = None
 
@@ -95,6 +110,7 @@ class TimelineBlock(BaseModel):
     type: Literal["timeline"]
     eyebrow: str | None = None
     title: str
+    caveat: str | None = None
     source_start: int | None = None
     links: list[BlockLink] | None = None
     items: list[TimelineBlockItem] = Field(..., min_length=3, max_length=6)
@@ -103,10 +119,28 @@ class TimelineBlock(BaseModel):
 DeckBlock = ClaimBlock | ListBlock | MetricBlock | QuoteBlock | TimelineBlock
 
 
+class CommunityNote(BaseModel):
+    text: str
+    quote: str | None = None
+
+
+class Community(BaseModel):
+    """What the comment section adds, when it adds anything.
+
+    Deliberately not a block type: the block union stays at five variants and
+    this renders as one section after them.
+    """
+
+    sentiment: Literal["supportive", "mixed", "critical"]
+    summary: str
+    notes: list[CommunityNote] = Field(default_factory=list, max_length=4)
+
+
 class Deck(BaseModel):
     title: str
     tldr: str
     blocks: list[DeckBlock] = Field(..., min_length=1, max_length=7)
+    community: Community | None = None
 
 _BLOCK_VARIANT_BY_TYPE = {
     "claim": "ClaimBlock",
@@ -155,6 +189,37 @@ def _deck_validation_error(payload: dict[str, Any]) -> str | None:
             report += f"\n(+{len(lines) - _MAX_REPORTED_ERRORS} more)"
         return report
     return None
+
+
+_MIN_VERIFIABLE_QUOTE_CHARS = 12
+_WS_RE = re.compile(r"\s+")
+
+
+def _normalized(text: str) -> str:
+    return _WS_RE.sub(" ", text).strip().casefold()
+
+
+def _drop_unverifiable_quotes(deck: Deck, comments: list[Comment]) -> None:
+    """Delete any community quote that is not verbatim in the fetched comments.
+
+    Enforced by deletion rather than by a validation error on purpose. The reader
+    is protected either way and `note.text` already carries the point, whereas
+    routing this through `_deck_validation_error` would spend one of only two
+    repair rounds - or fail an otherwise good deck with a 502 - over a decoration.
+
+    Matched against the comment texts rather than the formatted lines, which is
+    stricter: a quote that swallowed a "[c07 likes=...]" prefix is not a quote.
+    """
+    if deck.community is None:
+        return
+    corpus = _normalized("\n".join(c.text for c in comments))
+    for index, note in enumerate(deck.community.notes):
+        quote = note.quote
+        if not quote or len(quote.strip()) < _MIN_VERIFIABLE_QUOTE_CHARS:
+            continue
+        if _normalized(quote) not in corpus:
+            print(f"dropped unverifiable community quote {index}: {quote[:80]!r}")
+            note.quote = None
 
 
 class VocabularyTag(BaseModel):
@@ -254,7 +319,14 @@ class ClassifyRequest(BaseModel):
 
 def _deck_body(deck: "Deck") -> str:
     """Classify from the deck rather than the transcript: it is already the
-    distilled subject matter, and it is ~100x cheaper to send."""
+    distilled subject matter, and it is ~100x cheaper to send.
+
+    Community text and block caveats are deliberately excluded. They originate in
+    public comments, and `new_tags` reaches the tag table on one click - a
+    redundant tag splits the vocabulary permanently, so the librarian is not fed
+    attacker-controlled text. Reading only named fields keeps that true by
+    default; do not switch this to a generic dump.
+    """
     parts: list[str] = []
     for block in deck.blocks:
         if block.type == "claim":
@@ -417,6 +489,44 @@ class SlidesResponse(BaseModel):
     language_fallback: bool = False
     transcript: list[TranscriptSnippet]
     classification: Classification | None = None
+    comments: list[VideoComment] = Field(default_factory=list)
+
+
+def _video_comment(comment: Comment) -> VideoComment:
+    return VideoComment(
+        text=comment.text,
+        likes=comment.likes,
+        replies=comment.replies,
+        heart=comment.heart,
+        author=comment.author,
+        published=comment.published,
+    )
+
+
+class CommentsResponse(BaseModel):
+    video_id: str
+    count: int
+    comments: list[VideoComment]
+
+
+@app.get("/comments", response_model=CommentsResponse)
+def get_comments(url: str) -> CommentsResponse:
+    """Diagnostic sibling of the silent comment fetch inside /slides.
+
+    The scraper reads YouTube's internals, so it will eventually break, and
+    /slides swallows that by design. This is where you find out - so unlike
+    /slides it fails loudly.
+    """
+    video_id = extract_video_id(url)
+    try:
+        comments = fetch_top_comments(video_id)
+    except CommentsError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return CommentsResponse(
+        video_id=video_id,
+        count=len(comments),
+        comments=[_video_comment(c) for c in comments],
+    )
 
 
 def _fmt_duration(seconds: float) -> str:
@@ -442,6 +552,22 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
 
     transcript_text = format_snippets_for_llm(fetched.snippets)
     duration_s = _duration_seconds(fetched.snippets)
+
+    # A comment scrape is a bonus signal, never a dependency: it reads YouTube's
+    # internals, which move without notice, and must not cost the user their deck.
+    # Same contract as the classification below - and `except Exception` for the
+    # same reason, so a scraper that breaks in a new way degrades like one that
+    # breaks in a known way.
+    comments: list[Comment] = []
+    try:
+        comments = fetch_top_comments(video_id)
+    except Exception as exc:  # noqa: BLE001
+        print(f"comment fetch failed for {video_id}: {exc}")
+
+    # `or None` collapses "no usable comments" into "no comments block", so the
+    # deck prompt has exactly one absence path to handle.
+    comments_text = format_comments_for_llm(comments) or None
+
     try:
         raw_deck = generate_deck(
             channel=req.channel or "one-shot",
@@ -450,9 +576,11 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
             transcript_text=transcript_text,
             transcript_language=fetched.language,
             instructions=req.instructions,
+            comments_text=comments_text,
             validate=_deck_validation_error,
         )
         deck = Deck.model_validate(raw_deck)
+        _drop_unverifiable_quotes(deck, comments)
     except ValidationError as exc:
         detail = _deck_validation_error(raw_deck) or str(exc)
         raise HTTPException(status_code=502, detail=f"Deck generation failed: {detail}") from exc
@@ -486,6 +614,7 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
             for s in fetched.snippets
         ],
         classification=classification,
+        comments=[_video_comment(c) for c in comments],
     )
 
 

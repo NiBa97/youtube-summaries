@@ -1,4 +1,4 @@
-import type { DeckBlock, Tag, TranscriptSnippet, Video } from '../types'
+import type { Community, CommunitySentiment, DeckBlock, Tag, TranscriptSnippet, Video } from '../types'
 import { RichText, SmartLink } from './RichText'
 import { faviconUrl, hostLabel, stripRichText } from '../lib/richtext'
 
@@ -142,6 +142,7 @@ export function DeckPanel({ video, topic, onJump }: Props) {
     return <EmptyDeck />
   }
   const numbered = numberedPoints(transcript)
+  const community = video.deck?.community || null
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg)', minHeight: 0 }}>
@@ -183,15 +184,70 @@ export function DeckPanel({ video, topic, onJump }: Props) {
               <div style={{ minWidth: 0 }}>
                 <h3 style={sectionTitleStyle}>{stripRichText(blockTitle(block))}</h3>
                 <p style={bodyStyle}><RichText text={blockText(block)} /></p>
+                {block.caveat ? <BlockCaveat caveat={block.caveat} /> : null}
                 <DetailLayer details={detailsForBlock(block, i, blocks, numbered)} onJump={onJump} />
                 {block.links?.length ? <SourceLinks links={block.links} /> : null}
               </div>
             </section>
           ))}
+          {community && <CommunitySection community={community} index={blocks.length + 1} />}
         </div>
       </div>
     </div>
   )
+}
+
+/** What commenters disputed about one block. The text self-attributes
+ *  ("Commenters ..."), so it cannot be misread as the video's own claim. */
+function BlockCaveat({ caveat }: { caveat: string }) {
+  return (
+    <div style={sourceLinksStyle}>
+      <div style={{ ...monoMutedStyle, fontSize: 10, color: 'var(--accent)' }}>FROM THE COMMENTS</div>
+      <p style={{ ...bodyStyle, marginTop: 8 }}><RichText text={caveat} /></p>
+    </div>
+  )
+}
+
+function CommunitySection({ community, index }: { community: Community; index: number }) {
+  const notes = community.notes || []
+  return (
+    <section style={{ ...rowStyle, borderTop: '1px solid var(--rule)', background: 'var(--bg)' }}>
+      <div style={metaColStyle}>
+        <div style={editorialMetaStyle}>
+          <span>{String(index).padStart(2, '0')}</span>
+          {/* No --:-- placeholder: comments have no transcript moment, and the
+              empty-timestamp glyph would read as broken data. */}
+          <span style={sentimentDotStyle(community.sentiment)} />
+        </div>
+        <div style={typeStyle}>community</div>
+        <div style={{ ...typeStyle, color: 'var(--muted)' }}>{community.sentiment.toUpperCase()}</div>
+      </div>
+
+      <div style={{ minWidth: 0 }}>
+        <h3 style={sectionTitleStyle}>From the comments</h3>
+        <p style={bodyStyle}><RichText text={community.summary} /></p>
+        {notes.length > 0 && (
+          <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0 0', display: 'grid', gap: 12 }}>
+            {notes.map((note, i) => (
+              <li key={i}>
+                <div style={{ ...bodyStyle, margin: 0 }}><RichText text={note.text} /></div>
+                {note.quote && <blockquote style={communityQuoteStyle}>{note.quote}</blockquote>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  )
+}
+
+/** The palette has no green/red, so sentiment is encoded by fill rather than
+ *  hue - and the word beside it carries the actual meaning. */
+function sentimentDotStyle(sentiment: CommunitySentiment): React.CSSProperties {
+  const base: React.CSSProperties = { width: 8, height: 8, borderRadius: '50%', display: 'inline-block' }
+  if (sentiment === 'critical') return { ...base, background: 'var(--accent)' }
+  if (sentiment === 'mixed') return { ...base, background: 'transparent', border: '1px solid var(--accent)' }
+  return { ...base, background: 'var(--muted)' }
 }
 
 function EmptyDeck() {
@@ -348,6 +404,17 @@ const sourceLinksStyle: React.CSSProperties = {
   marginTop: 12,
   paddingTop: 10,
   borderTop: '1px solid var(--rule)',
+}
+
+const communityQuoteStyle: React.CSSProperties = {
+  margin: '8px 0 0',
+  paddingLeft: 12,
+  borderLeft: '2px solid var(--rule-strong)',
+  fontFamily: 'var(--serif)',
+  fontStyle: 'italic',
+  fontSize: 14,
+  lineHeight: 1.5,
+  color: 'var(--muted)',
 }
 
 const sourceLinkStyle: React.CSSProperties = {

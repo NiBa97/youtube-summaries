@@ -22,6 +22,18 @@ export type Vocabulary = {
   tags: { name: string; count: number }[]
 }
 
+/** The sanitised comments the backend actually sent to the model. Persisted so
+ *  the deck's community section stays reproducible - a re-scrape returns a
+ *  different comment section. `author` is stored but never sent to the model. */
+export type VideoComment = {
+  text: string
+  likes: number
+  replies: number
+  heart: boolean
+  author: string
+  published: string
+}
+
 export type SlidesResponse = {
   video_id: string
   deck: Deck
@@ -33,6 +45,8 @@ export type SlidesResponse = {
   language_fallback: boolean
   transcript: TranscriptSnippet[]
   classification: Classification | null
+  /** empty when the comment section was disabled, thin, or the scrape failed */
+  comments: VideoComment[]
 }
 
 export type LinkPreview = {
