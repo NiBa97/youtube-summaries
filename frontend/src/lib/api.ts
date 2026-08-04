@@ -45,7 +45,13 @@ export type SlidesResponse = {
   language_fallback: boolean
   transcript: TranscriptSnippet[]
   classification: Classification | null
-  /** empty when the comment section was disabled, thin, or the scrape failed */
+}
+
+export type CommunityResponse = {
+  video_id: string
+  /** the deck sent in, with `community` and block `caveat`s filled in */
+  deck: Deck
+  /** empty when the comment section was disabled, thin, or had nothing to add */
   comments: VideoComment[]
 }
 
@@ -113,4 +119,14 @@ export async function postClassify(input: {
   vocabulary: Vocabulary
 }): Promise<Classification> {
   return post<Classification>('/classify', input)
+}
+
+/**
+ * Read a video's comments against its existing deck. Deliberately on demand:
+ * the scrape reads YouTube's internals and costs seconds, and most comment
+ * sections have nothing worth reporting, so it is paid for only when asked.
+ * Returns the same deck with `community` and block `caveat`s filled in.
+ */
+export function postCommunity(url: string, deck: Deck): Promise<CommunityResponse> {
+  return post<CommunityResponse>('/community', { url, deck })
 }

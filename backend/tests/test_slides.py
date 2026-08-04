@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 
 from app.comments import Comment, CommentsError
+from app.comments import Comment, CommentsError
 from app.main import app
 
 client = TestClient(app)
@@ -227,139 +228,123 @@ def _comment(text, likes=10, replies=0, heart=False):
 
 _COMMENTS = [_comment(f"a substantive comment number {i}", likes=100 - i) for i in range(5)]
 
+_STORED_DECK = {
+    "title": "Title",
+    "tldr": "Short summary",
+    "blocks": [
+        {"type": "claim", "title": "first", "body": "body one"},
+        {"type": "claim", "title": "second", "body": "body two"},
+    ],
+}
 
-@patch("app.main.fetch_top_comments")
+
 @patch("app.main.generate_deck")
 @patch("app.main.YouTubeTranscriptApi")
-def test_slides_passes_comments_to_gemini(mock_api_cls, mock_gen, mock_comments):
+def test_slides_never_fetches_comments(mock_api_cls, mock_gen):
+    """The scrape is on demand only - /slides must not pay for it."""
     mock_api_cls.return_value.fetch.return_value = _fake_fetched()
     mock_gen.return_value = _DECK
-    mock_comments.return_value = _COMMENTS
 
-    r = client.post("/slides", json={"url": "dQw4w9WgXcQ"})
-    assert r.status_code == 200, r.text
+    with patch("app.main.fetch_top_comments") as mock_comments:
+        r = client.post("/slides", json={"url": "dQw4w9WgXcQ"})
+        assert r.status_code == 200, r.text
+        mock_comments.assert_not_called()
 
-    comments_text = mock_gen.call_args.kwargs["comments_text"]
-    assert "[c01 likes=100]" in comments_text
-    assert "a substantive comment number 0" in comments_text
-    assert "someone" not in comments_text, "author names must never reach the model"
-
-    body = r.json()
-    assert len(body["comments"]) == 5
-    assert body["comments"][0]["author"] == "someone", "authors are stored, just not sent"
+    assert "comments_text" not in mock_gen.call_args.kwargs
+    assert r.json()["deck"]["community"] is None
+    assert "comments" not in r.json()
 
 
+# --- POST /community --------------------------------------------------------
+
+
+@patch("app.main.generate_community")
 @patch("app.main.fetch_top_comments")
-@patch("app.main.generate_deck")
-@patch("app.main.YouTubeTranscriptApi")
-def test_slides_survives_a_failing_comment_fetch(mock_api_cls, mock_gen, mock_comments):
-    mock_api_cls.return_value.fetch.return_value = _fake_fetched()
-    mock_gen.return_value = _DECK
-    mock_comments.side_effect = RuntimeError("youtube changed its internals")
-
-    r = client.post("/slides", json={"url": "dQw4w9WgXcQ"})
-    assert r.status_code == 200, "a failed comment fetch must not cost the user their deck"
-    body = r.json()
-    assert body["deck"]["blocks"][0]["type"] == "claim"
-    assert body["deck"]["community"] is None
-    assert body["comments"] == []
-    assert mock_gen.call_args.kwargs["comments_text"] is None
-
-
-@patch("app.main.fetch_top_comments")
-@patch("app.main.generate_deck")
-@patch("app.main.YouTubeTranscriptApi")
-def test_slides_omits_the_block_when_no_comments_survive_filtering(
-    mock_api_cls, mock_gen, mock_comments
-):
-    mock_api_cls.return_value.fetch.return_value = _fake_fetched()
-    mock_gen.return_value = _DECK
-    mock_comments.return_value = []
-
-    r = client.post("/slides", json={"url": "dQw4w9WgXcQ"})
-    assert r.status_code == 200, r.text
-    assert mock_gen.call_args.kwargs["comments_text"] is None
-
-
-@patch("app.main.fetch_top_comments")
-@patch("app.main.generate_deck")
-@patch("app.main.YouTubeTranscriptApi")
-def test_slides_returns_a_community_section(mock_api_cls, mock_gen, mock_comments):
-    mock_api_cls.return_value.fetch.return_value = _fake_fetched()
+def test_community_endpoint_merges_into_the_deck(mock_comments, mock_gen):
     mock_comments.return_value = _COMMENTS
     mock_gen.return_value = {
-        **_DECK,
         "community": {
             "sentiment": "mixed",
-            "summary": "Commenters accept the framing but dispute the headline number.",
-            "notes": [
-                {
-                    "text": "Several commenters dispute the benchmark",
-                    "quote": "a substantive comment number 2",
-                }
-            ],
+            "summary": "Commenters accept the framing but dispute the number.",
+            "notes": [{"text": "Several commenters dispute it",
+                       "quote": "a substantive comment number 2"}],
         },
+        "caveats": [{"block": 2, "text": "Commenters note the figure is from 2019."}],
     }
 
-    r = client.post("/slides", json={"url": "dQw4w9WgXcQ"})
+    r = client.post("/community", json={"url": "dQw4w9WgXcQ", "deck": _STORED_DECK})
     assert r.status_code == 200, r.text
-    community = r.json()["deck"]["community"]
-    assert community["sentiment"] == "mixed"
-    assert community["notes"][0]["text"] == "Several commenters dispute the benchmark"
-    assert community["notes"][0]["quote"] == "a substantive comment number 2"
+    body = r.json()
+    assert body["video_id"] == "dQw4w9WgXcQ"
+
+    deck = body["deck"]
+    assert deck["community"]["sentiment"] == "mixed"
+    assert deck["community"]["notes"][0]["quote"] == "a substantive comment number 2"
+    assert deck["blocks"][1]["caveat"] == "Commenters note the figure is from 2019."
+    assert deck["blocks"][0]["caveat"] is None
+    # the deck itself is untouched apart from the two comment-sourced fields
+    assert deck["title"] == "Title"
+    assert deck["blocks"][0]["body"] == "body one"
+    assert len(body["comments"]) == 5
+
+
+@patch("app.main.generate_community")
+@patch("app.main.fetch_top_comments")
+def test_community_endpoint_sends_the_deck_not_the_transcript(mock_comments, mock_gen):
+    mock_comments.return_value = _COMMENTS
+    mock_gen.return_value = {"community": None, "caveats": []}
+
+    r = client.post("/community", json={"url": "dQw4w9WgXcQ", "deck": _STORED_DECK})
+    assert r.status_code == 200, r.text
+
+    kwargs = mock_gen.call_args.kwargs
+    assert kwargs["deck_text"].startswith("[b01] first. body one")
+    assert "[b02] second. body two" in kwargs["deck_text"]
+    assert "[c01 likes=100]" in kwargs["comments_text"]
+    assert "someone" not in kwargs["comments_text"], "author names must never reach the model"
+
+
+@patch("app.main.generate_community")
+@patch("app.main.fetch_top_comments")
+def test_community_endpoint_with_no_usable_comments_skips_the_model(mock_comments, mock_gen):
+    """A thin comment section is a normal answer, not an error - and not worth a
+    model call."""
+    mock_comments.return_value = []
+
+    r = client.post("/community", json={"url": "dQw4w9WgXcQ", "deck": _STORED_DECK})
+    assert r.status_code == 200, r.text
+    mock_gen.assert_not_called()
+    body = r.json()
+    assert body["deck"]["community"] is None
+    assert body["comments"] == []
 
 
 @patch("app.main.fetch_top_comments")
-@patch("app.main.generate_deck")
-@patch("app.main.YouTubeTranscriptApi")
-def test_slides_drops_a_fabricated_quote(mock_api_cls, mock_gen, mock_comments):
-    mock_api_cls.return_value.fetch.return_value = _fake_fetched()
-    mock_comments.return_value = _COMMENTS
-    mock_gen.return_value = {
-        **_DECK,
-        "community": {
-            "sentiment": "critical",
-            "summary": "s",
-            "notes": [{"text": "One commenter reported the opposite",
-                       "quote": "I tried this and got the opposite result"}],
-        },
-    }
-
-    r = client.post("/slides", json={"url": "dQw4w9WgXcQ"})
-    assert r.status_code == 200, "a bad quote must not fail the deck"
-    note = r.json()["deck"]["community"]["notes"][0]
-    assert note["quote"] is None
-    assert note["text"] == "One commenter reported the opposite"
+def test_community_endpoint_fails_loudly_on_a_broken_scraper(mock_comments):
+    """The inverse of the /slides contract: someone clicked a button and is
+    waiting, so a dead scraper must be visible rather than silently empty."""
+    mock_comments.side_effect = CommentsError("Comment fetch failed: boom")
+    r = client.post("/community", json={"url": "dQw4w9WgXcQ", "deck": _STORED_DECK})
+    assert r.status_code == 502
+    assert "boom" in r.json()["detail"]
 
 
+@patch("app.main.generate_community")
 @patch("app.main.fetch_top_comments")
-@patch("app.main.generate_deck")
-@patch("app.main.YouTubeTranscriptApi")
-def test_slides_accepts_a_block_caveat(mock_api_cls, mock_gen, mock_comments):
-    mock_api_cls.return_value.fetch.return_value = _fake_fetched()
+def test_community_endpoint_fails_loudly_on_a_bad_model_answer(mock_comments, mock_gen):
     mock_comments.return_value = _COMMENTS
-    mock_gen.return_value = {
-        "title": "Title",
-        "tldr": "Short summary",
-        "blocks": [{"type": "claim", "title": "t", "body": "b",
-                    "caveat": "Commenters note the figure is from 2019."}],
-    }
-
-    r = client.post("/slides", json={"url": "dQw4w9WgXcQ"})
-    assert r.status_code == 200, r.text
-    assert r.json()["deck"]["blocks"][0]["caveat"] == "Commenters note the figure is from 2019."
+    mock_gen.return_value = {"community": {"sentiment": "angry", "summary": "s", "notes": []}}
+    r = client.post("/community", json={"url": "dQw4w9WgXcQ", "deck": _STORED_DECK})
+    assert r.status_code == 502
+    assert "Community read failed" in r.json()["detail"]
 
 
-@patch("app.main.generate_deck")
-@patch("app.main.YouTubeTranscriptApi")
-def test_stored_deck_without_community_still_validates(mock_api_cls, mock_gen):
-    """Every deck already in Pocketbase predates this field."""
-    mock_api_cls.return_value.fetch.return_value = _fake_fetched()
-    mock_gen.return_value = _DECK
+def test_community_endpoint_bad_url():
+    r = client.post("/community", json={"url": "not-a-url", "deck": _STORED_DECK})
+    assert r.status_code == 400
 
-    r = client.post("/slides", json={"url": "dQw4w9WgXcQ"})
-    assert r.status_code == 200, r.text
-    assert r.json()["deck"]["community"] is None
+
+# --- GET /comments (diagnostic) --------------------------------------------
 
 
 @patch("app.main.fetch_top_comments")
@@ -368,21 +353,13 @@ def test_comments_endpoint(mock_comments):
     r = client.get("/comments", params={"url": "dQw4w9WgXcQ"})
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["video_id"] == "dQw4w9WgXcQ"
     assert body["count"] == 5
     assert body["comments"][0]["likes"] == 100
+    assert body["comments"][0]["author"] == "someone", "authors are stored, just not sent"
 
 
 @patch("app.main.fetch_top_comments")
 def test_comments_endpoint_fails_loudly(mock_comments):
-    """The inverse of the /slides contract: this endpoint exists to surface a
-    broken scraper, so it must not degrade quietly."""
     mock_comments.side_effect = CommentsError("Comment fetch failed: boom")
     r = client.get("/comments", params={"url": "dQw4w9WgXcQ"})
     assert r.status_code == 502
-    assert "boom" in r.json()["detail"]
-
-
-def test_comments_endpoint_bad_url():
-    r = client.get("/comments", params={"url": "not-a-url"})
-    assert r.status_code == 400

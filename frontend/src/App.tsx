@@ -203,7 +203,12 @@ function App() {
                   />
                 )}
                 <div style={{ flex: 1, minHeight: 0 }}>
-                  <DeckPanel video={selectedVideo} topic={selectedTopic} onJump={setJumpStart} />
+                  <DeckPanel
+                    video={selectedVideo}
+                    topic={selectedTopic}
+                    onJump={setJumpStart}
+                    onSaved={patchVideo}
+                  />
                 </div>
               </div>
             </Panel>

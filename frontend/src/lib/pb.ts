@@ -157,6 +157,8 @@ export async function updateVideo(
     tag_source?: TagSource
     read_status?: Status
     starred?: boolean
+    deck?: Deck
+    comments?: unknown
   },
 ): Promise<Video> {
   const body: Record<string, unknown> = { ...patch }

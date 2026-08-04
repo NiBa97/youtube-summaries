@@ -1,4 +1,8 @@
+import { useState } from 'react'
+
 import type { Community, CommunitySentiment, DeckBlock, Tag, TranscriptSnippet, Video } from '../types'
+import { postCommunity } from '../lib/api'
+import { updateVideo } from '../lib/pb'
 import { RichText, SmartLink } from './RichText'
 import { faviconUrl, hostLabel, stripRichText } from '../lib/richtext'
 
@@ -84,6 +88,8 @@ type Props = {
   video: Video | null
   topic: Tag | null
   onJump?: (seconds: number) => void
+  /** Called with the updated video after a comment check has been persisted. */
+  onSaved?: (video: Video) => void
 }
 
 function legacyBlocks(video: Video): DeckBlock[] {
@@ -131,7 +137,7 @@ function fmtTimestamp(seconds: number | null | undefined): string {
   return `${m}:${String(sec).padStart(2, '0')}`
 }
 
-export function DeckPanel({ video, topic, onJump }: Props) {
+export function DeckPanel({ video, topic, onJump, onSaved }: Props) {
   if (!video) {
     return <EmptyDeck />
   }
@@ -192,7 +198,61 @@ export function DeckPanel({ video, topic, onJump }: Props) {
           ))}
           {community && <CommunitySection community={community} index={blocks.length + 1} />}
         </div>
+        {video.deck && <CommentCheck video={video} onSaved={onSaved} />}
       </div>
+    </div>
+  )
+}
+
+/** Fetching comments reads YouTube's internals and costs seconds, and most
+ *  comment sections have nothing worth reporting - so it is a button, not part
+ *  of importing a video. */
+function CommentCheck({ video, onSaved }: { video: Video; onSaved?: (v: Video) => void }) {
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  // A different video means a stale result; drop it rather than show it here.
+  const [shownFor, setShownFor] = useState(video.id)
+  if (shownFor !== video.id) {
+    setShownFor(video.id)
+    setNote(null)
+    setError(null)
+  }
+
+  const run = async () => {
+    if (busy || !video.deck) return
+    setBusy(true)
+    setNote(null)
+    setError(null)
+    try {
+      // The backend accepts a bare 11-char id, which every record has even when
+      // the original URL was never stored.
+      const res = await postCommunity(video.sourceUrl || video.youtubeId, video.deck)
+      const saved = await updateVideo(video.id, { deck: res.deck, comments: res.comments })
+      onSaved?.(saved)
+      if (!res.deck.community) {
+        setNote(
+          res.comments.length === 0
+            ? 'No comments available for this video.'
+            : 'Nothing in the comments adds to the deck.',
+        )
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Comment check failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const label = video.deck?.community ? 'Re-check comments' : 'Check the comments'
+  return (
+    <div style={commentCheckStyle}>
+      <button type="button" onClick={run} disabled={busy} style={commentCheckButtonStyle}>
+        {busy ? 'Reading comments…' : label}
+      </button>
+      {note && <span style={commentCheckNoteStyle}>{note}</span>}
+      {error && <span style={{ ...commentCheckNoteStyle, color: 'var(--accent)' }}>{error}</span>}
     </div>
   )
 }
@@ -404,6 +464,35 @@ const sourceLinksStyle: React.CSSProperties = {
   marginTop: 12,
   paddingTop: 10,
   borderTop: '1px solid var(--rule)',
+}
+
+const commentCheckStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 12,
+  flexWrap: 'wrap',
+  marginTop: 16,
+}
+
+const commentCheckButtonStyle: React.CSSProperties = {
+  appearance: 'none',
+  background: 'transparent',
+  border: '1px solid var(--rule-strong)',
+  borderRadius: 2,
+  padding: '7px 12px',
+  cursor: 'pointer',
+  color: 'var(--muted)',
+  fontFamily: 'var(--mono)',
+  fontSize: 10.5,
+  letterSpacing: '.08em',
+  textTransform: 'uppercase',
+}
+
+const commentCheckNoteStyle: React.CSSProperties = {
+  fontFamily: 'var(--mono)',
+  fontSize: 10.5,
+  letterSpacing: '.04em',
+  color: 'var(--muted)',
 }
 
 const communityQuoteStyle: React.CSSProperties = {

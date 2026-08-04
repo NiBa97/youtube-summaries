@@ -17,7 +17,7 @@ from youtube_transcript_api._errors import (
 
 from .comment_format import format_comments_for_llm
 from .comments import Comment, CommentsError, fetch_top_comments
-from .gemini import NO_TOPIC, classify_video, generate_deck
+from .gemini import NO_TOPIC, classify_video, generate_community, generate_deck
 from .link_preview import LinkPreviewError, fetch_preview
 from .transcript_format import format_snippets_for_llm
 
@@ -317,29 +317,39 @@ class ClassifyRequest(BaseModel):
     vocabulary: Vocabulary = Field(default_factory=Vocabulary)
 
 
+def _block_text(block: "DeckBlock") -> str:
+    """One block flattened to a line of prose.
+
+    Reads only named content fields, which is what keeps `caveat` out of every
+    caller by construction - see `_deck_body`. Do not turn this into a generic
+    dump of the block.
+    """
+    if block.type == "claim":
+        return f"{block.title}. {block.body}"
+    if block.type == "list":
+        return f"{block.title}. " + " ".join(block.items)
+    if block.type == "metric":
+        return f"{block.value} {block.label}. {block.body or ''}"
+    if block.type == "quote":
+        return f'"{block.text}" - {block.attribution}'
+    return f"{block.title}. " + " ".join(i.text for i in block.items)
+
+
 def _deck_body(deck: "Deck") -> str:
     """Classify from the deck rather than the transcript: it is already the
     distilled subject matter, and it is ~100x cheaper to send.
 
     Community text and block caveats are deliberately excluded. They originate in
     public comments, and `new_tags` reaches the tag table on one click - a
-    redundant tag splits the vocabulary permanently, so the librarian is not fed
-    attacker-controlled text. Reading only named fields keeps that true by
-    default; do not switch this to a generic dump.
+    redundant tag splits the vocabulary permanently, so the librarian is never fed
+    attacker-controlled text.
     """
-    parts: list[str] = []
-    for block in deck.blocks:
-        if block.type == "claim":
-            parts.append(f"{block.title}. {block.body}")
-        elif block.type == "list":
-            parts.append(f"{block.title}. " + " ".join(block.items))
-        elif block.type == "metric":
-            parts.append(f"{block.value} {block.label}. {block.body or ''}")
-        elif block.type == "quote":
-            parts.append(f'"{block.text}" - {block.attribution}')
-        elif block.type == "timeline":
-            parts.append(f"{block.title}. " + " ".join(i.text for i in block.items))
-    return "\n".join(parts)
+    return "\n".join(_block_text(block) for block in deck.blocks)
+
+
+def _deck_listing(deck: "Deck") -> str:
+    """The deck as numbered lines, so a caveat can name the block it qualifies."""
+    return "\n".join(f"[b{i:02d}] {_block_text(b)}" for i, b in enumerate(deck.blocks, start=1))
 
 
 def _classify(req: ClassifyRequest) -> Classification:
@@ -489,7 +499,6 @@ class SlidesResponse(BaseModel):
     language_fallback: bool = False
     transcript: list[TranscriptSnippet]
     classification: Classification | None = None
-    comments: list[VideoComment] = Field(default_factory=list)
 
 
 def _video_comment(comment: Comment) -> VideoComment:
@@ -507,6 +516,101 @@ class CommentsResponse(BaseModel):
     video_id: str
     count: int
     comments: list[VideoComment]
+
+
+class CommunityRequest(BaseModel):
+    url: str = Field(..., description="Full YouTube URL or bare 11-char video id")
+    deck: Deck = Field(..., description="The already-generated deck to read the comments against")
+
+
+class CommunityResponse(BaseModel):
+    video_id: str
+    deck: Deck
+    comments: list[VideoComment]
+
+
+_MAX_CAVEATS = 2
+
+
+def _apply_community(deck: Deck, result: dict[str, Any], comments: list[Comment]) -> None:
+    """Fold a community result into the deck it was generated for.
+
+    Merging here rather than in the browser keeps the one fiddly step - mapping a
+    caveat's block number onto a block - in tested Python, and means the frontend
+    only has to store what it gets back.
+    """
+    deck.community = None
+    for block in deck.blocks:
+        block.caveat = None
+
+    raw_community = result.get("community")
+    if isinstance(raw_community, dict):
+        deck.community = Community.model_validate(raw_community)
+        _drop_unverifiable_quotes(deck, comments)
+
+    raw_caveats = result.get("caveats")
+    if not isinstance(raw_caveats, list):
+        return
+    applied = 0
+    for entry in raw_caveats:
+        if applied >= _MAX_CAVEATS or not isinstance(entry, dict):
+            continue
+        text = entry.get("text")
+        number = entry.get("block")
+        if not isinstance(text, str) or not text.strip() or not isinstance(number, int):
+            continue
+        # The model is told to number from the listing it was given; an index it
+        # invented has nothing to attach to, so drop it rather than guess.
+        if not 1 <= number <= len(deck.blocks):
+            print(f"dropped caveat for out-of-range block {number}")
+            continue
+        deck.blocks[number - 1].caveat = text.strip()
+        applied += 1
+
+
+@app.post("/community", response_model=CommunityResponse)
+def post_community(req: CommunityRequest) -> CommunityResponse:
+    """Read a video's comments against an existing deck, on demand.
+
+    Deliberately not part of /slides. The scrape reads YouTube's internals and
+    adds seconds to a request, while most comment sections have nothing worth
+    reporting - so this is paid for only when the reader asks for it, and unlike
+    the rest of the pipeline it fails loudly, because someone is waiting on it.
+    """
+    video_id = extract_video_id(req.url)
+
+    try:
+        comments = fetch_top_comments(video_id)
+    except CommentsError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Comment fetch failed: {exc}") from exc
+
+    deck = req.deck
+    if not comments:
+        # Not an error: the comment section was disabled, empty, or too thin to
+        # be worth a model call. Answer with an unchanged deck.
+        _apply_community(deck, {}, comments)
+        return CommunityResponse(video_id=video_id, deck=deck, comments=[])
+
+    try:
+        result = generate_community(
+            title=deck.title,
+            tldr=deck.tldr,
+            deck_text=_deck_listing(deck),
+            comments_text=format_comments_for_llm(comments),
+        )
+        _apply_community(deck, result, comments)
+    except ValidationError as exc:
+        raise HTTPException(status_code=502, detail=f"Community read failed: {exc}") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Community read failed: {exc}") from exc
+
+    return CommunityResponse(
+        video_id=video_id,
+        deck=deck,
+        comments=[_video_comment(c) for c in comments],
+    )
 
 
 @app.get("/comments", response_model=CommentsResponse)
@@ -553,21 +657,6 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
     transcript_text = format_snippets_for_llm(fetched.snippets)
     duration_s = _duration_seconds(fetched.snippets)
 
-    # A comment scrape is a bonus signal, never a dependency: it reads YouTube's
-    # internals, which move without notice, and must not cost the user their deck.
-    # Same contract as the classification below - and `except Exception` for the
-    # same reason, so a scraper that breaks in a new way degrades like one that
-    # breaks in a known way.
-    comments: list[Comment] = []
-    try:
-        comments = fetch_top_comments(video_id)
-    except Exception as exc:  # noqa: BLE001
-        print(f"comment fetch failed for {video_id}: {exc}")
-
-    # `or None` collapses "no usable comments" into "no comments block", so the
-    # deck prompt has exactly one absence path to handle.
-    comments_text = format_comments_for_llm(comments) or None
-
     try:
         raw_deck = generate_deck(
             channel=req.channel or "one-shot",
@@ -576,11 +665,9 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
             transcript_text=transcript_text,
             transcript_language=fetched.language,
             instructions=req.instructions,
-            comments_text=comments_text,
             validate=_deck_validation_error,
         )
         deck = Deck.model_validate(raw_deck)
-        _drop_unverifiable_quotes(deck, comments)
     except ValidationError as exc:
         detail = _deck_validation_error(raw_deck) or str(exc)
         raise HTTPException(status_code=502, detail=f"Deck generation failed: {detail}") from exc
@@ -614,7 +701,6 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
             for s in fetched.snippets
         ],
         classification=classification,
-        comments=[_video_comment(c) for c in comments],
     )
 
 

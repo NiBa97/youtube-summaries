@@ -144,7 +144,6 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
         title: title.trim() || result.deck?.title || `YouTube ${result.video_id}`,
         deck: result.deck,
         transcript: result.transcript,
-        comments: result.comments,
         instructions: instructions.trim(),
         topic: picked.topicId,
         tags: resolved.map((t) => t.id),
