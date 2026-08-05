@@ -61,6 +61,7 @@ npm run lint     # eslint .
 1. Frontend calls `POST /api/transcript` with `{ url, languages? }` to fetch transcript snippets, or `POST /api/slides` with `{ url, languages? }` to fetch transcript **and** generate slides in one call. Backend extracts the 11-char video id (handles `youtube.com/watch`, `youtu.be`, `/embed/`, `/shorts/`, `/v/`, or bare id).
 2. `/api/slides` returns `{ video_id, deck, duration_seconds, transcript, classification }`. Gemini is called server-side; the API key (`GEMINI_API_KEY`) lives in the backend's `.env` and never reaches the browser. See `docs/adr/0002-gemini-call-via-backend.md`.
    If the request carries a `vocabulary` (`{ topics: string[], tags: [{name, count}] }`) the backend makes a second Gemini call to file the video — see *Library management* below. `POST /api/classify` is the same step standalone, for re-tagging and for the backfill script.
+   `/api/slides` does **not** touch comments. Reading a video's comment section is a separate, on-demand call — see *Community sentiment* below.
 3. Frontend persists video metadata, the `transcript` JSON, and `slides_html` to Pocketbase from the browser. Transcripts are stored so the frontend can re-render slides offline without re-calling the backend; they can also be re-fetched on demand via `/api/transcript`.
 4. If latency forces it, switch to a status/polling model and have the backend write directly into Pocketbase.
 
@@ -71,7 +72,7 @@ Pocketbase rules on the `videos` collection are wide-open (`listRule`/`viewRule`
 ### Pocketbase schema changes
 
 All schema work goes through migration files in `database/pb_migrations/` (JS migrations, name format `<unix-ts>_<slug>.js`, both `up` and `down`). Do **not** rely on admin-UI changes for anything that needs to be reproducible — they get overwritten when `pb_data/` is reset. Existing collections:
-- `videos` (id `videos00000videos`): `url`, `video_id` (unique, 11 chars), `title`, `status` (ingest state: `pending|transcribed|slides_ready|error`), `slides_html`, `transcript` (json), `deck` (json), `error`, `topic` (relation→tags, maxSelect 1), `tags` (relation→tags), `tag_source` (json), `read_status` (`unread|reading|read`), `starred` (bool).
+- `videos` (id `videos00000videos`): `url`, `video_id` (unique, 11 chars), `title`, `status` (ingest state: `pending|transcribed|slides_ready|error`), `slides_html`, `transcript` (json), `deck` (json), `comments` (json), `error`, `topic` (relation→tags, maxSelect 1), `tags` (relation→tags), `tag_source` (json), `read_status` (`unread|reading|read`), `starred` (bool).
 - `tags` (id `tags00000000tags`): `name`, `norm` (unique), `kind` (`topic|tag`), `color`, `sort`.
 
 Note `status` (ingest pipeline) and `read_status` (have you read it) are different fields.
@@ -112,6 +113,25 @@ uv run python scripts/backfill_tags.py --revert     # strip every ai-attached ta
 They talk to Pocketbase over REST (`PB_URL`, default `http://localhost/pb`) with stdlib only.
 
 `docs/library-management-options.html` is the report the design came from, including the options that were rejected.
+
+### Community sentiment
+
+`POST /api/community` reads a video's top comments against its **already-written deck** and fills in two things: an optional top-level `community` section (`sentiment` / `summary` / `notes`) and a short `caveat` on any block commenters materially dispute. `community` is deliberately **not** a sixth block type, so the block union stays at five variants.
+
+It is a **button in the deck panel, not part of importing a video**, and that is the load-bearing decision. Always-on was tried first and rejected: the scrape adds 3-5s to every single import, and the gate below is built so that most comment sections correctly produce nothing — so you would pay a certain cost on 100% of videos for an occasional benefit. On demand it also gets to fail loudly, because someone is waiting on it.
+
+Load-bearing details, all deliberate:
+
+- **It reads the deck, not the transcript.** The deck is the distilled claims already, so the call is small and fast (~10s including the scrape, vs ~40s if it re-read the transcript). Blocks are sent numbered (`[b01] ...`) so a caveat can name the block it qualifies; `_apply_community()` maps that number back onto the block and drops anything out of range rather than guessing.
+- **Comment text is untrusted input**, and `generate_community` is the *only* call in the app that ever sees it — which is what keeps the untrusted path narrow. Defences in depth: URLs *and bare domains* are stripped in the sanitiser (bare domains need their own pattern, since `buy at spam.example` carries no scheme); each comment is flattened to one line so none can impersonate a prompt label; the block is fenced with a **per-request random id** (a constant delimiter in a public repo is a published delimiter) and followed by our own re-assertion, so our words are read last. Author names are never sent — they add nothing and cost an injection surface. Verified end to end: four hijack attempts (`SYSTEM:`, `admin:`, fence-spoofing, HTML) leaked nothing while genuine corrections came through.
+- **Comment text never reaches the classifier.** `_block_text()` reads only named content fields, so `caveat` and `community` are excluded from `_deck_body()` by construction. `new_tags` reaches the tag table on one click and a redundant tag splits the vocabulary permanently — do not turn `_block_text` into a generic dump. Pinned by a test.
+- **Quotes are verified, not trusted.** `_drop_unverifiable_quotes()` deletes any `note.quote` that is not verbatim in the fetched comments, matched against the comment texts rather than the formatted lines.
+- **Wall clock is ours to own.** The library sets *no* timeout on its first request and retries AJAX failures 5x20s, which would pin a threadpool worker for minutes. `_clamp_session` and `_clamp_retries` bound that to ~18s worst case, and both check what they patch, so a re-signed library method skips the patch instead of silently restoring the 400s path.
+- **An absent community section is the normal, correct answer.** `COMMUNITY_SYSTEM_PROMPT` opens with a gate: at least 3 comments must correct, dispute, add context, or report having applied the video's claims. Praise, memes, and nostalgia explicitly fail it, as does anything about the video-watching experience rather than its subject. Putting that gate *first* in a standalone prompt is what made it work — the same rules buried inside the deck prompt were routinely ignored.
+- `GET /api/comments?url=…` is the diagnostic: the same scrape, no model call, fails loudly. The scraper reads YouTube's internals and will break; this is how you find out.
+- Stored comments (`comments` json) are the sanitised list the model actually saw. Unlike a transcript, a re-scrape returns a *different* comment section, so this is the only way to tell a bad scrape from a bad model after the fact. Write-only today: the reading UI gets its community section from `deck`.
+
+`backend/tests/conftest.py` stubs the fetch suite-wide via an autouse fixture, so a test that forgets to patch fails safe instead of scraping YouTube.
 
 ### Reverse-proxy contract
 

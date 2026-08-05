@@ -48,6 +48,9 @@ export type VideoRecord = RecordModel & {
   status: 'pending' | 'transcribed' | 'slides_ready' | 'error'
   deck?: Deck | null
   transcript?: unknown
+  /** Write-only for now: stored for reproducibility, read via the PB admin UI.
+   *  The reading UI gets its community section from `deck`. */
+  comments?: unknown
   instructions?: string
   error?: string
   topic?: string
@@ -117,6 +120,7 @@ export async function createVideo(input: {
   title: string
   deck: Deck
   transcript: unknown
+  comments?: unknown
   instructions?: string
   topic?: string | null
   tags?: string[]
@@ -153,6 +157,8 @@ export async function updateVideo(
     tag_source?: TagSource
     read_status?: Status
     starred?: boolean
+    deck?: Deck
+    comments?: unknown
   },
 ): Promise<Video> {
   const body: Record<string, unknown> = { ...patch }

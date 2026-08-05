@@ -24,7 +24,7 @@ export type Summary = {
 
 export type TimelineBlockItem = { marker: string; text: string }
 export type BlockLink = { title: string; url: string; publisher?: string | null }
-type BlockSource = { source_start?: number | null; links?: BlockLink[] | null }
+type BlockSource = { source_start?: number | null; links?: BlockLink[] | null; caveat?: string | null }
 export type ClaimBlock = BlockSource & { type: 'claim'; eyebrow?: string | null; title: string; body: string }
 export type ListBlock = BlockSource & { type: 'list'; eyebrow?: string | null; title: string; items: string[] }
 export type MetricBlock = BlockSource & { type: 'metric'; eyebrow?: string | null; value: string; label: string; body?: string | null }
@@ -32,10 +32,21 @@ export type QuoteBlock = BlockSource & { type: 'quote'; eyebrow?: string | null;
 export type TimelineBlock = BlockSource & { type: 'timeline'; eyebrow?: string | null; title: string; items: TimelineBlockItem[] }
 export type DeckBlock = ClaimBlock | ListBlock | MetricBlock | QuoteBlock | TimelineBlock
 
+/** What the comment section adds, when it adds anything. Not a block type: it
+ *  renders as one section after the blocks. */
+export type CommunitySentiment = 'supportive' | 'mixed' | 'critical'
+export type CommunityNote = { text: string; quote?: string | null }
+export type Community = {
+  sentiment: CommunitySentiment
+  summary: string
+  notes?: CommunityNote[]
+}
+
 export type Deck = {
   title: string
   tldr: string
   blocks: DeckBlock[]
+  community?: Community | null
   summary?: Summary
 }
 

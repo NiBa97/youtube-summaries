@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from app.main import Vocabulary, VocabularyTag, _reconcile, app, normalize_tag
+from app.main import Deck, Vocabulary, VocabularyTag, _deck_body, _reconcile, app, normalize_tag
 
 client = TestClient(app)
 
@@ -164,3 +164,28 @@ def test_classify_endpoint_failure(mock_classify):
     mock_classify.side_effect = RuntimeError("no api key")
     r = client.post("/classify", json={"title": "T", "tldr": "S", "body": "B"})
     assert r.status_code == 502
+
+
+def test_deck_body_excludes_community_and_caveats():
+    """Deliberate: comment text is public and `new_tags` reaches the tag table on
+    one click, so the librarian is never fed attacker-controlled text."""
+    deck = Deck.model_validate({
+        "title": "Title",
+        "tldr": "Short summary",
+        "blocks": [{
+            "type": "claim",
+            "title": "the claim",
+            "body": "the body",
+            "caveat": "Commenters mention kryptocoin heavily",
+        }],
+        "community": {
+            "sentiment": "critical",
+            "summary": "Commenters discuss kryptocoin instead",
+            "notes": [{"text": "kryptocoin came up repeatedly", "quote": None}],
+        },
+    })
+
+    body = _deck_body(deck)
+    assert "the claim" in body
+    assert "the body" in body
+    assert "kryptocoin" not in body
