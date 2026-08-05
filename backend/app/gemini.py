@@ -17,7 +17,7 @@ from .prompts import (
     VOCABULARY_SYSTEM_PROMPT,
 )
 
-_MODEL_NAME = "gemini-2.5-flash"
+_MODEL_NAME = "gemini-3.1-flash-lite"
 
 # One generation plus this many correction rounds before giving up.
 _MAX_REPAIR_ATTEMPTS = 2
