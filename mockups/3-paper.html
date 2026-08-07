@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reel Notes — Paper</title>
+<style>
+  :root {
+    --bg: #f7f3ea;
+    --ink: #262117;
+    --muted: #756b58;
+    --rule: #ddd5c4;
+    --accent: #8a3324;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Helvetica, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    font-size: 17px;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+
+  header { padding: 40px 0 0; text-align: center; }
+  .masthead {
+    font-size: 26px; font-weight: 400; letter-spacing: 0.01em;
+    text-decoration: none; font-style: italic;
+  }
+  .dateline {
+    font-family: var(--sans); font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted); margin-top: 10px;
+  }
+  .header-rule { max-width: 720px; margin: 28px auto 0; padding: 0 24px; }
+  .header-rule div { border-top: 1px solid var(--ink); border-bottom: 3px double var(--ink); height: 5px; }
+
+  .hero { padding: 64px 0 40px; text-align: center; }
+  h1 {
+    font-size: clamp(34px, 5.5vw, 50px);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .hero p {
+    margin: 26px auto 0; max-width: 520px;
+    font-size: 19px; color: var(--muted);
+  }
+  .hero .actions { margin-top: 36px; }
+  .btn {
+    display: inline-block; font-family: var(--sans);
+    font-size: 15px; font-weight: 500; text-decoration: none;
+    background: var(--ink); color: var(--bg);
+    padding: 12px 26px; border-radius: 3px;
+  }
+  .btn:hover { background: #000; }
+  .aside-link {
+    display: inline-block; margin-left: 20px; font-size: 16px;
+    font-style: italic; color: var(--muted);
+  }
+
+  /* the specimen — one full-size slide as a figure */
+  figure.specimen { padding: 40px 0 8px; }
+  .page {
+    background: #fffdf7;
+    border: 1px solid var(--rule);
+    box-shadow: 0 1px 3px rgba(38,33,23,0.08);
+    padding: 44px 48px 36px;
+  }
+  .page .head {
+    display: flex; justify-content: space-between;
+    font-family: var(--sans); font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted);
+    border-bottom: 1px solid var(--rule); padding-bottom: 14px;
+  }
+  .page .thesis {
+    font-size: 24px; line-height: 1.4; font-style: italic;
+    margin: 30px 0 26px;
+  }
+  .page ul { list-style: none; }
+  .page li {
+    font-size: 16px; padding: 10px 0;
+    border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; gap: 18px;
+  }
+  .page li .ts {
+    font-family: var(--sans); font-size: 12px; color: var(--accent);
+    white-space: nowrap; padding-top: 3px;
+  }
+  .page .foot {
+    display: flex; justify-content: space-between;
+    font-family: var(--sans); font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+    border-top: 1px solid var(--rule); margin-top: 26px; padding-top: 14px;
+  }
+  figcaption {
+    font-family: var(--sans); font-size: 13px; color: var(--muted);
+    text-align: center; margin-top: 16px;
+  }
+
+  section { padding: 56px 0; }
+  .kicker {
+    font-family: var(--sans); font-size: 12px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 18px;
+  }
+  section h2 { font-size: 28px; font-weight: 400; margin-bottom: 18px; letter-spacing: -0.01em; }
+  section > .wrap > p { color: #4a4335; max-width: 600px; }
+  section p + p { margin-top: 16px; }
+  p .num { font-family: var(--sans); font-size: 13px; color: var(--accent); margin-right: 6px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 48px; margin-top: 28px; }
+  .item { border-top: 1px solid var(--rule); padding: 18px 0 10px; }
+  .item h3 { font-size: 18px; font-weight: 400; font-style: italic; margin-bottom: 6px; }
+  .item p { font-family: var(--sans); font-size: 14px; color: var(--muted); line-height: 1.55; }
+
+  .closing { text-align: center; padding: 72px 0 84px; border-top: 1px solid var(--rule); }
+  .closing h2 { font-size: 30px; font-weight: 400; margin-bottom: 14px; }
+  .closing p { color: var(--muted); margin-bottom: 30px; }
+
+  footer {
+    border-top: 3px double var(--ink);
+    padding: 22px 0 52px;
+    font-family: var(--sans); font-size: 12px; color: var(--muted);
+  }
+  footer .wrap { display: flex; justify-content: space-between; }
+
+  @media (max-width: 640px) {
+    .two-col { grid-template-columns: 1fr; }
+    .page { padding: 28px 22px 24px; }
+    .aside-link { display: block; margin: 16px 0 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="masthead" href="/">Reel Notes</a>
+  <div class="dateline">A private review of your subscriptions</div>
+</header>
+<div class="header-rule"><div></div></div>
+
+<div class="hero">
+  <div class="wrap">
+    <h1>Some videos deserve<br>to be <em>read.</em></h1>
+    <p>Reel Notes turns YouTube videos into short, typeset summaries — the argument, the numbers, the one good quote — each line pointing back to its exact moment in the film.</p>
+    <div class="actions">
+      <a class="btn" href="/app">Open the reading room</a>
+      <a class="aside-link" href="#specimen">or inspect a specimen ↓</a>
+    </div>
+  </div>
+</div>
+
+<figure class="specimen" id="specimen">
+  <div class="wrap">
+    <div class="page">
+      <div class="head">
+        <span>Acquired</span>
+        <span>3 h 09 m &rarr; 6 min</span>
+      </div>
+      <div class="thesis">Nvidia's moat is not the GPU. It is seventeen years of CUDA libraries that no rival can rebuild inside one product cycle.</div>
+      <ul>
+        <li><span>CUDA began as a side bet that nobody at Intel took seriously.</span><a class="ts" href="#">14:32 &rarr;</a></li>
+        <li><span>The 2018 crypto crash nearly ended the datacenter strategy.</span><a class="ts" href="#">1:02:11 &rarr;</a></li>
+        <li><span>Today's 76% gross margin is carried by software, not silicon.</span><a class="ts" href="#">2:41:05 &rarr;</a></li>
+      </ul>
+      <div class="foot">
+        <span>Summary · 1 of 6</span>
+        <span>Reel Notes</span>
+      </div>
+    </div>
+    <figcaption>An actual summary from the demo library. The arrows open the video at that second.</figcaption>
+  </div>
+</figure>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">The routine</div>
+    <h2>Paste, wait half a minute, read.</h2>
+    <p><span class="num">1.</span>Paste any YouTube link — the three-hour interview you bookmarked in March qualifies.</p>
+    <p><span class="num">2.</span>The transcript is fetched and condensed into the same six-part form every time: thesis, key points, a headline number, the quote, a timeline, a closer. Sameness is the feature — your eyes learn where everything lives.</p>
+    <p><span class="num">3.</span>The summary files itself onto one of your topic shelves. Suggested tags queue for your approval; nothing is added to your library without a nod.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="kicker">Particulars</div>
+    <h2>Small courtesies.</h2>
+    <div class="two-col">
+      <div class="item">
+        <h3>Trust, then verify</h3>
+        <p>Every key point is time-stamped into the source. A dubious claim is one click from its origin.</p>
+      </div>
+      <div class="item">
+        <h3>The commentariat</h3>
+        <p>On request, the comment section is read against the summary. Claims the audience credibly disputes receive a printed caveat.</p>
+      </div>
+      <div class="item">
+        <h3>An inbox, not a feed</h3>
+        <p>Unread, reading, read, starred. No autoplay, no thumbnails, nothing suggested. The queue holds only what you gave it.</p>
+      </div>
+      <div class="item">
+        <h3>Entirely yours</h3>
+        <p>Self-hosted and single-user. Transcripts are kept, so your library re-renders offline, forever.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="closing">
+  <div class="wrap">
+    <h2>The demo shelf holds twelve summaries.</h2>
+    <p>No account, no email. Read one on your next coffee.</p>
+    <a class="btn" href="/app">Open the reading room</a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>Reel Notes — made for readers</span>
+    <span>v0.4</span>
+  </div>
+</footer>
+
+</body>
+</html>

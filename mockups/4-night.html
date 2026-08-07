@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reel Notes — Night</title>
+<style>
+  :root {
+    --bg: #131312;
+    --panel: #1b1b19;
+    --panel-2: #222220;
+    --ink: #e8e6df;
+    --muted: #8f8d84;
+    --faint: #5c5a52;
+    --rule: #2c2c29;
+    --accent: #d9a441;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Helvetica, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+
+  header { border-bottom: 1px solid var(--rule); }
+  header .wrap { display: flex; justify-content: space-between; align-items: center; height: 58px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
+  .brand .dot { width: 8px; height: 8px; background: var(--accent); border-radius: 2px; }
+  header nav { display: flex; gap: 22px; font-size: 13.5px; color: var(--muted); }
+  header nav a:hover { color: var(--ink); }
+  header nav .go { color: var(--ink); border: 1px solid var(--rule); padding: 6px 14px; border-radius: 6px; }
+  header nav .go:hover { border-color: var(--faint); }
+
+  .hero { padding: 84px 0 56px; }
+  .hero .kicker { font-family: var(--mono); font-size: 12px; color: var(--accent); margin-bottom: 20px; }
+  h1 {
+    font-size: clamp(32px, 5vw, 48px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    max-width: 620px;
+  }
+  .hero .sub { margin-top: 22px; font-size: 17px; color: var(--muted); max-width: 500px; }
+  .hero .cta { margin-top: 34px; display: flex; align-items: center; gap: 18px; }
+  .btn {
+    display: inline-block; background: var(--ink); color: var(--bg);
+    font-size: 14.5px; font-weight: 600; padding: 10px 20px; border-radius: 7px;
+  }
+  .btn:hover { background: #fff; }
+  .hint { font-family: var(--mono); font-size: 12px; color: var(--faint); }
+  .hint kbd {
+    font-family: inherit; border: 1px solid var(--rule); border-bottom-width: 2px;
+    border-radius: 4px; padding: 1px 6px; margin: 0 2px; color: var(--muted);
+  }
+
+  /* app frame — the 3-pane layout drawn honestly */
+  .frame-wrap { padding-bottom: 84px; }
+  .frame {
+    border: 1px solid var(--rule); border-radius: 10px; overflow: hidden;
+    background: var(--panel);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+  }
+  .frame .titlebar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-bottom: 1px solid var(--rule);
+  }
+  .titlebar i { width: 10px; height: 10px; border-radius: 50%; background: var(--rule); }
+  .titlebar .addr {
+    margin-left: 12px; font-family: var(--mono); font-size: 11.5px; color: var(--faint);
+    background: var(--bg); border-radius: 5px; padding: 4px 12px; flex: 1; max-width: 340px;
+  }
+  .panes { display: grid; grid-template-columns: 150px 250px 1fr; min-height: 400px; }
+  .pane { border-right: 1px solid var(--rule); padding: 14px; }
+  .pane:last-child { border-right: 0; }
+  .pane .h { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); margin: 4px 0 10px; }
+  .shelf { font-size: 12.5px; color: var(--muted); padding: 5px 8px; border-radius: 5px; }
+  .shelf.on { background: var(--panel-2); color: var(--ink); }
+  .shelf .n { float: right; color: var(--faint); font-family: var(--mono); font-size: 10.5px; }
+  .vid { padding: 9px 8px; border-radius: 6px; margin-bottom: 2px; }
+  .vid.on { background: var(--panel-2); }
+  .vid .t { font-size: 12.5px; line-height: 1.35; }
+  .vid .m { font-family: var(--mono); font-size: 10px; color: var(--faint); margin-top: 3px; }
+  .vid .m b { color: var(--accent); font-weight: 400; }
+  .deckpane { padding: 22px 26px; }
+  .deckpane .meta { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; color: var(--faint); margin-bottom: 18px; }
+  .deckpane .thesis { font-size: 19px; line-height: 1.45; font-weight: 500; max-width: 440px; }
+  .deckpane .thesis span { color: var(--accent); }
+  .points { margin-top: 20px; border-top: 1px solid var(--rule); }
+  .points .p { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--rule); font-size: 13px; color: var(--muted); }
+  .points .ts { font-family: var(--mono); font-size: 11px; color: var(--accent); white-space: nowrap; }
+  .caveat {
+    margin-top: 18px; font-size: 12.5px; color: var(--muted);
+    border-left: 2px solid var(--accent); padding: 6px 12px;
+  }
+  .caveat b { color: var(--ink); font-weight: 500; }
+
+  section { padding: 0 0 84px; }
+  .rows { border-top: 1px solid var(--rule); }
+  .row {
+    display: grid; grid-template-columns: 200px 1fr 120px; gap: 24px;
+    padding: 22px 0; border-bottom: 1px solid var(--rule); align-items: baseline;
+  }
+  .row h3 { font-size: 15px; font-weight: 550; }
+  .row p { font-size: 14px; color: var(--muted); max-width: 560px; }
+  .row .k { font-family: var(--mono); font-size: 11.5px; color: var(--faint); text-align: right; }
+
+  .end { padding: 24px 0 96px; }
+  .end .box {
+    border: 1px solid var(--rule); border-radius: 10px;
+    padding: 44px; display: flex; justify-content: space-between; align-items: center; gap: 24px;
+  }
+  .end h2 { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; }
+  .end p { color: var(--muted); font-size: 14.5px; margin-top: 8px; }
+
+  footer { border-top: 1px solid var(--rule); padding: 22px 0 48px; }
+  footer .wrap { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11.5px; color: var(--faint); }
+
+  @media (max-width: 860px) {
+    .panes { grid-template-columns: 1fr; }
+    .pane { border-right: 0; border-bottom: 1px solid var(--rule); }
+    .pane.rail { display: none; }
+    .row { grid-template-columns: 1fr; gap: 6px; }
+    .row .k { text-align: left; }
+    .end .box { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="/"><span class="dot"></span>Reel Notes</a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#self-host">Self-hosting</a>
+      <a class="go" href="/app">Open app</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="kicker">watch less, know more</div>
+    <h1>The reading app for people who subscribe to too many channels.</h1>
+    <p class="sub">Every video becomes a six-part summary with timestamps back into the source. Your queue is an inbox: read it, star it, archive it.</p>
+    <div class="cta">
+      <a class="btn" href="/app">Open the app</a>
+      <span class="hint"><kbd>j</kbd><kbd>k</kbd> to move through the queue, <kbd>f</kbd> for focus mode</span>
+    </div>
+  </div>
+</div>
+
+<div class="frame-wrap">
+  <div class="wrap">
+    <div class="frame">
+      <div class="titlebar">
+        <i></i><i></i><i></i>
+        <span class="addr">reelnotes.local/app</span>
+      </div>
+      <div class="panes">
+        <div class="pane rail">
+          <div class="h">Topics</div>
+          <div class="shelf on">Semiconductors <span class="n">14</span></div>
+          <div class="shelf">AI &amp; Research <span class="n">31</span></div>
+          <div class="shelf">Engineering <span class="n">9</span></div>
+          <div class="shelf">Business <span class="n">17</span></div>
+          <div class="shelf">Physics <span class="n">6</span></div>
+          <div class="h" style="margin-top:18px">Tags</div>
+          <div class="shelf">#nvidia <span class="n">5</span></div>
+          <div class="shelf">#tsmc <span class="n">4</span></div>
+          <div class="shelf">#cuda <span class="n">3</span></div>
+        </div>
+        <div class="pane">
+          <div class="h">Queue — 3 unread</div>
+          <div class="vid on">
+            <div class="t">The Nvidia Decade: How CUDA Became the Moat</div>
+            <div class="m"><b>● unread</b> · acquired · 3h09m</div>
+          </div>
+          <div class="vid">
+            <div class="t">Why TSMC Can't Be Copied</div>
+            <div class="m"><b>● unread</b> · asianometry · 24m</div>
+          </div>
+          <div class="vid">
+            <div class="t">The Problem With Sports Biomechanics</div>
+            <div class="m">○ read · veritasium · 19m</div>
+          </div>
+          <div class="vid">
+            <div class="t">Demis Hassabis on the Path to AGI</div>
+            <div class="m">★ starred · lex fridman · 2h44m</div>
+          </div>
+        </div>
+        <div class="pane deckpane">
+          <div class="meta"><span>summary · 1/6</span><span>acquired · imported 3h ago</span></div>
+          <div class="thesis">Nvidia's moat isn't the GPU — it's <span>17 years of CUDA libraries</span> that nobody can replicate in a single product cycle.</div>
+          <div class="points">
+            <div class="p"><span>CUDA began as a bet nobody at Intel took seriously</span><a class="ts" href="#">→ 14:32</a></div>
+            <div class="p"><span>The 2018 crypto crash nearly killed the datacenter play</span><a class="ts" href="#">→ 1:02:11</a></div>
+            <div class="p"><span>Margins today depend on software, not silicon</span><a class="ts" href="#">→ 2:41:05</a></div>
+          </div>
+          <div class="caveat"><b>Community caveat</b> — several commenters note AMD's ROCm has closed part of the gap since this was recorded.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="features">
+  <div class="wrap">
+    <div class="rows">
+      <div class="row">
+        <h3>Deep links</h3>
+        <p>Every key point carries a timestamp. Click it and the video opens at that exact second — summaries you can audit.</p>
+        <span class="k">every point</span>
+      </div>
+      <div class="row">
+        <h3>Auto-filing</h3>
+        <p>Each import lands on one topic shelf and picks up tags from your vocabulary. Proposed new tags wait for a human click, always.</p>
+        <span class="k">revertible</span>
+      </div>
+      <div class="row">
+        <h3>Community check</h3>
+        <p>One button reads the comments against the summary. Disputed claims get caveats; most videos correctly get nothing.</p>
+        <span class="k">on demand</span>
+      </div>
+      <div class="row">
+        <h3>Focus mode</h3>
+        <p>Hide everything but the deck. Arrow keys to move. It reads like a Kindle, not a dashboard.</p>
+        <span class="k">press f</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="end" id="self-host">
+  <div class="wrap">
+    <div class="box">
+      <div>
+        <h2>One docker-compose, your hardware.</h2>
+        <p>No accounts, no telemetry, no cloud. Transcripts stay in your database and re-render offline.</p>
+      </div>
+      <a class="btn" href="/app">Open the app</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>reel notes v0.4</span>
+    <span>fastapi · pocketbase · react</span>
+  </div>
+</footer>
+
+</body>
+</html>

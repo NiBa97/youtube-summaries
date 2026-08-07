@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Style-Vergleich: Landing vs. App</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Helvetica, sans-serif;
+    background: #f5f5f4; color: #1a1a1a; line-height: 1.55; font-size: 15px;
+    padding: 48px 24px 96px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  h1 { font-size: 24px; letter-spacing: -0.01em; margin-bottom: 6px; }
+  .sub { color: #777; font-size: 14px; margin-bottom: 40px; max-width: 720px; }
+  h2 { font-size: 18px; margin: 56px 0 16px; padding-top: 24px; border-top: 2px solid #ddd; }
+  h3 { font-size: 15px; margin: 28px 0 10px; }
+  p.note { color: #555; font-size: 14px; max-width: 760px; margin-bottom: 14px; }
+
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 18px 0 8px; }
+  figure { background: #fff; border: 1px solid #e2e2e0; border-radius: 8px; padding: 14px; }
+  figure img { width: 100%; height: auto; display: block; border: 1px solid #eee; }
+  figcaption { font-size: 12px; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; background: #fff; }
+  th, td { border: 1px solid #e2e2e0; padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { background: #efefee; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  td code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background: #f4f4f2; padding: 1px 5px; border-radius: 3px; white-space: nowrap; }
+  .sw { display: inline-block; width: 13px; height: 13px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; border: 1px solid rgba(0,0,0,0.15); }
+  tr.prop td { background: #fbf8f2; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin-right: 6px; }
+  .tag.easy { background: #e3efe3; color: #2c6e2c; }
+  .tag.mid { background: #fdf1dc; color: #9a6b1a; }
+  .tag.hard { background: #fbe4e4; color: #a33; }
+
+  @media (max-width: 860px) { .duo { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Style-Vergleich: Landingpage ↔ echtes Tool</h1>
+  <p class="sub">
+    Beide Screenshots aus demselben Build (Branch td/landing-page, Commit 46c8e61).
+    Links immer die Landingpage, rechts die App (Paper-Theme, echte Daten aus Pocketbase).
+    Werte stammen aus <code>landing.css</code>, <code>index.css</code> und <code>DeckPanel.tsx</code> — nicht aus den Pixeln geraten.
+  </p>
+
+  <h2>1 · Farbwerte</h2>
+  <table>
+    <tr><th>Token</th><th>Landing</th><th>App (Paper)</th><th>Delta</th></tr>
+    <tr>
+      <td>Hintergrund</td>
+      <td><span class="sw" style="background:#f7f3ea"></span><code>#f7f3ea</code>, Karten <span class="sw" style="background:#fffdf7"></span><code>#fffdf7</code></td>
+      <td><span class="sw" style="background:#f4ede0"></span><code>#f4ede0</code>, Surface <span class="sw" style="background:#faf6ec"></span><code>#faf6ec</code></td>
+      <td>Landing eine Stufe heller und „papierweißer“; App wirkt gelblicher</td>
+    </tr>
+    <tr>
+      <td><b>Akzent</b></td>
+      <td><span class="sw" style="background:#8a3324"></span><code>#8a3324</code> (Oxblood)</td>
+      <td><span class="sw" style="background:#a85a2a"></span><code>#a85a2a</code> (Burnt Orange)</td>
+      <td><b>Größter sichtbarer Unterschied.</b> Zwei verschiedene Markenfarben</td>
+    </tr>
+    <tr>
+      <td>Ink / Muted</td>
+      <td><code>#262117</code> / <code>#756b58</code></td>
+      <td><code>#2a2419</code> / <code>#7a6f5e</code></td>
+      <td>praktisch identisch — passt</td>
+    </tr>
+    <tr>
+      <td>Linien</td>
+      <td>solid <code>#ddd5c4</code></td>
+      <td><code>rgba(42,36,25,.1)</code></td>
+      <td>optisch gleichwertig — passt</td>
+    </tr>
+  </table>
+
+  <h2>2 · Typografie</h2>
+  <div class="duo">
+    <figure><figcaption>Landing — Specimen (Serif dominiert, TLDR kursiv)</figcaption><img src="el-land-specimen.png"></figure>
+    <figure><figcaption>App — Deck-Sections (Sans-Body, TLDR aufrecht)</figcaption><img src="el-app-sections.png"></figure>
+  </div>
+  <table>
+    <tr><th>Element</th><th>Landing</th><th>App</th><th>Delta</th></tr>
+    <tr>
+      <td>Grundschrift</td>
+      <td>Serif (Source Serif 4) als Body-Font der ganzen Seite</td>
+      <td>Sans (Inter) als Body-Font; Serif nur Titel + TLDR</td>
+      <td>Landing liest sich wie Magazin, App wie Anwendung — für UI ok, im Deck sichtbar</td>
+    </tr>
+    <tr>
+      <td>TLDR</td>
+      <td>Serif 19px <i>kursiv</i></td>
+      <td>Serif 19px aufrecht (<code>tldrStyle</code>)</td>
+      <td>Landing verkauft die These als „kursiver Leitsatz“ — App löst das nicht ein</td>
+    </tr>
+    <tr>
+      <td>Section-Body</td>
+      <td>Sans 13.5px, Farbe <code>#4a4335</code> (dunkel)</td>
+      <td>Sans, Farbe <code>var(--muted)</code> (hell)</td>
+      <td>App-Fließtext deutlich blasser als beworben</td>
+    </tr>
+    <tr>
+      <td>Labels</td>
+      <td>Sans, letter-spacing 0.13em (Karten-Header)</td>
+      <td>Mono überall (EDITORIAL STRIP, READ MORE, …)</td>
+      <td>zwei Label-Systeme; App-Mono ist konsequenter</td>
+    </tr>
+    <tr>
+      <td>Kursiv als Stilmittel</td>
+      <td>Wortmarke, Feature-Titel, Zitate, TLDR</td>
+      <td>nur Community-Zitate</td>
+      <td>Landing nutzt Kursiv als Markenzeichen, App fast gar nicht</td>
+    </tr>
+  </table>
+
+  <h2>3 · Timestamp &amp; Section-Meta</h2>
+  <p class="note">
+    Landing: Chip in Akzentfarbe mit Pfeil <code>0:40 →</code>, Meta in einer Zeile über dem Titel.
+    App: linke 128px-Spalte mit <code>01 0:16</code> (Index + unterstrichener Muted-Link), darunter CLAIM und Topic.
+  </p>
+  <div class="duo">
+    <figure><figcaption>Landing — Meta-Zeile mit Akzent-Chip</figcaption><img src="el-land-hero-cards.png"></figure>
+    <figure><figcaption>App — Meta-Spalte links, Timestamp unterstrichen muted</figcaption><img src="el-app-sections.png"></figure>
+  </div>
+  <table>
+    <tr><th>Detail</th><th>Landing</th><th>App</th></tr>
+    <tr><td>Timestamp-Farbe</td><td>Akzent (<code>#8a3324</code>), kein Underline, Pfeil →</td><td><code>var(--muted)</code>, underline, kein Pfeil (<code>timestampButtonStyle</code>)</td></tr>
+    <tr><td>Blocktyp</td><td>klein neben dem Chip: <code>list · Happy Money Principles</code></td><td>eigene Zeile in Meta-Spalte, Akzentfarbe</td></tr>
+    <tr><td>Listen-Items</td><td>echte Liste mit Gedankenstrich-Markern</td><td><code>blockText()</code> klebt Items zu einem Absatz zusammen (<code>items.join(' ')</code>)</td></tr>
+  </table>
+
+  <h2>4 · Flächen, Radien, Schatten</h2>
+  <div class="duo">
+    <figure><figcaption>Landing — Papierbögen mit Schatten, Radius 0–3px</figcaption><img src="el-land-samples.png"></figure>
+    <figure><figcaption>App — flache Flächen, Radius 8–10px + Pills</figcaption><img src="el-app-rail.png"></figure>
+  </div>
+  <table>
+    <tr><th>Detail</th><th>Landing</th><th>App</th></tr>
+    <tr><td>Karten</td><td><code>#fffdf7</code>, 1px Rand, weicher Doppelschatten („liegt auf dem Tisch“)</td><td><code>var(--surface)</code>, 1px Rand, kein Schatten (Deck-Strip)</td></tr>
+    <tr><td>Button-Radius</td><td>3px (Buttons), 0px (Karten)</td><td>10px (<code>fr-btn</code>, Suche, Rows), 999px (Lenses, Chips, Badges)</td></tr>
+    <tr><td>Primär-Button</td><td>Ink-gefüllt, eckig</td><td>Akzent-gefüllt, rund (Add video)</td></tr>
+  </table>
+
+  <h2>5 · Brand</h2>
+  <div class="duo">
+    <figure><figcaption>Landing — kursive Serif-Wortmarke, kein Logo-Kasten</figcaption><img src="el-land-nav.png"></figure>
+    <figure><figcaption>App — R-Kachel (Radius 8, Akzent) + Serif bold + Mono-Unterzeile</figcaption><img src="el-app-rail-brand.png"></figure>
+  </div>
+
+  <h2>6 · Vorschlag: was in der App anpassen</h2>
+  <p class="note">Sortiert nach Wirkung pro Aufwand. Alles Paper-Theme-Werte bzw. Einzeiler in <code>DeckPanel.tsx</code>, sofern nicht anders vermerkt.</p>
+  <table>
+    <tr><th>#</th><th>Änderung</th><th>Wo</th><th>Aufwand</th></tr>
+    <tr class="prop"><td>1</td><td>Akzent im Paper-Theme auf Oxblood <code>#8a3324</code> ziehen (oder Landing zurück auf <code>#a85a2a</code> — eine Entscheidung, eine Zeile)</td><td><code>index.css [data-theme="paper"] --accent</code></td><td><span class="tag easy">1 Zeile</span></td></tr>
+    <tr class="prop"><td>2</td><td>TLDR kursiv stellen — der „Leitsatz“-Effekt der Landing</td><td><code>DeckPanel.tsx tldrStyle</code> + <code>fontStyle: 'italic'</code></td><td><span class="tag easy">1 Zeile</span></td></tr>
+    <tr class="prop"><td>3</td><td>Timestamps wie beworben: Akzentfarbe, Pfeil <code>→</code>, Underline weg</td><td><code>timestampButtonStyle</code></td><td><span class="tag easy">3 Zeilen</span></td></tr>
+    <tr class="prop"><td>4</td><td>Section-Body dunkler: <code>color-mix(in srgb, var(--ink) 75%, var(--muted))</code> statt muted</td><td><code>bodyStyle</code></td><td><span class="tag easy">1 Zeile</span></td></tr>
+    <tr class="prop"><td>5</td><td>Deck-Strip als „Papierbogen“: Hintergrund <code>#fffdf7</code> (neuer Token <code>--page</code>) + weicher Schatten</td><td><code>index.css</code> + <code>stripStyle</code></td><td><span class="tag easy">4 Zeilen</span></td></tr>
+    <tr class="prop"><td>6</td><td>List-Blocks als echte Liste rendern statt <code>items.join(' ')</code> — Lesbarkeit + entspricht Landing-Specimen</td><td><code>DeckPanel.tsx blockText()</code> → eigene Render-Variante</td><td><span class="tag mid">~20 Zeilen</span></td></tr>
+    <tr class="prop"><td>7</td><td>Hintergrund-Stufe angleichen: <code>--bg #f7f3ea</code>, <code>--surface #fbf7ee</code> (eine Nuance heller, näher an „Papier“)</td><td><code>index.css</code> Paper-Theme</td><td><span class="tag easy">2 Zeilen</span><br>Nebenwirkung: alle Panes — vorher anschauen</td></tr>
+    <tr class="prop"><td>8</td><td>Wortmarke im Rail kursiv (<code>fr-brand-name</code>), R-Kachel behalten</td><td><code>index.css</code></td><td><span class="tag easy">1 Zeile</span></td></tr>
+    <tr class="prop"><td>9</td><td>Optional: Primär-Buttons eckiger (Radius 10 → 6) Richtung Landing-Sprache. Pills (Lenses/Chips) bewusst rund lassen — das ist App-UI, kein Marketing</td><td><code>index.css fr-btn</code></td><td><span class="tag mid">Geschmack</span></td></tr>
+  </table>
+
+  <h2>Anhang · alle Element-Screenshots</h2>
+  <div class="duo">
+    <figure><figcaption>Landing — Hero-Copy</figcaption><img src="el-land-hero-copy.png"></figure>
+    <figure><figcaption>Landing — Steps</figcaption><img src="el-land-steps.png"></figure>
+    <figure><figcaption>Landing — Annotationen</figcaption><img src="el-land-annos.png"></figure>
+    <figure><figcaption>Landing — Features</figcaption><img src="el-land-features.png"></figure>
+    <figure><figcaption>Landing — Pull-Quote</figcaption><img src="el-land-pull.png"></figure>
+    <figure><figcaption>Landing — CTA + Footer</figcaption><img src="el-land-cta-footer.png"></figure>
+    <figure><figcaption>App — Videoliste</figcaption><img src="el-app-list.png"></figure>
+    <figure><figcaption>App — Tag-Bar</figcaption><img src="el-app-tagbar.png"></figure>
+    <figure><figcaption>App — TLDR</figcaption><img src="el-app-tldr.png"></figure>
+    <figure><figcaption>App — Rail-Buttons</figcaption><img src="el-app-buttons.png"></figure>
+  </div>
+</div>
+</body>
+</html>

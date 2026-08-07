@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reel Notes — Utility</title>
+<style>
+  :root {
+    --ink: #111;
+    --muted: #555;
+    --rule: #111;
+    --bg: #fcfcfa;
+    --link: #0000cc;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.45;
+    font-size: 15px;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 0 20px; }
+  .mono { font-family: var(--mono); }
+
+  header { border-bottom: 2px solid var(--rule); }
+  header .wrap {
+    display: flex; justify-content: space-between; align-items: center;
+    height: 52px;
+  }
+  .brand { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; color: var(--ink); }
+  .brand:hover { text-decoration: none; }
+  header nav { display: flex; gap: 20px; font-size: 14px; }
+  header .ver { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  .hero { padding: 72px 0 56px; border-bottom: 1px solid var(--rule); }
+  .hero .grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: start; }
+  h1 {
+    font-size: clamp(30px, 4.4vw, 44px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+  .hero .sub { margin-top: 20px; font-size: 16px; color: var(--muted); max-width: 460px; }
+  .hero .cta { margin-top: 32px; display: flex; gap: 12px; }
+  .btn {
+    display: inline-block;
+    border: 2px solid var(--ink);
+    background: var(--ink); color: #fff;
+    font-size: 14px; font-weight: 600;
+    padding: 9px 18px;
+  }
+  .btn:hover { background: #fff; color: var(--ink); text-decoration: none; }
+  .btn.alt { background: transparent; color: var(--ink); }
+  .btn.alt:hover { background: var(--ink); color: #fff; }
+
+  /* terminal-ish input demo */
+  .demo { border: 2px solid var(--ink); }
+  .demo .bar {
+    border-bottom: 1px solid var(--ink);
+    padding: 8px 12px;
+    font-family: var(--mono); font-size: 12px;
+    display: flex; justify-content: space-between;
+    background: #f1f1ed;
+  }
+  .demo .in { padding: 14px 12px; font-family: var(--mono); font-size: 13px; border-bottom: 1px dashed #999; }
+  .demo .in .c { color: #999; }
+  .demo .out { padding: 14px 12px; font-size: 13.5px; }
+  .demo .out .row { display: flex; gap: 10px; padding: 5px 0; }
+  .demo .out .t { font-family: var(--mono); font-size: 12px; color: var(--muted); flex-shrink: 0; width: 58px; }
+  .demo .out .row a { color: var(--ink); border-bottom: 1px solid #bbb; }
+
+  section { padding: 56px 0; border-bottom: 1px solid var(--rule); }
+  h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 28px; }
+  h2 .idx { font-family: var(--mono); color: var(--muted); font-weight: 400; margin-right: 10px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  td, th { border: 1px solid #ccc; padding: 12px 14px; text-align: left; vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; background: #f1f1ed; font-weight: 600; }
+  td:first-child { font-weight: 600; white-space: nowrap; width: 200px; }
+  td .d { color: var(--muted); }
+
+  .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); border: 2px solid var(--ink); }
+  .stage { padding: 18px 16px 22px; border-right: 1px solid var(--ink); }
+  .stage:last-child { border-right: 0; }
+  .stage .n { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .stage h3 { font-size: 15px; margin: 8px 0 6px; }
+  .stage p { font-size: 13px; color: var(--muted); }
+
+  .facts { columns: 2; column-gap: 48px; font-size: 14.5px; max-width: 860px; }
+  .facts li { break-inside: avoid; margin-bottom: 12px; margin-left: 18px; color: var(--muted); }
+  .facts li b { color: var(--ink); font-weight: 600; }
+
+  .final { padding: 64px 0; }
+  .final p { font-size: 17px; max-width: 520px; margin-bottom: 24px; }
+
+  footer { padding: 20px 0 44px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  footer .wrap { display: flex; justify-content: space-between; }
+
+  @media (max-width: 760px) {
+    .hero .grid, .pipeline { grid-template-columns: 1fr; }
+    .stage { border-right: 0; border-bottom: 1px solid var(--ink); }
+    .facts { columns: 1; }
+    td:first-child { width: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="/">REEL NOTES</a>
+    <nav>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#spec">Spec</a>
+      <a href="/app">Open app</a>
+    </nav>
+    <span class="ver">v0.4 / self-hosted</span>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="grid">
+      <div>
+        <h1>A YouTube video goes in.<br>A readable summary comes out.</h1>
+        <p class="sub">Six fixed sections. Every claim carries a timestamp into the source. Built for one impatient reader; runs on your own machine.</p>
+        <div class="cta">
+          <a class="btn" href="/app">Open app</a>
+          <a class="btn alt" href="#spec">Read the spec</a>
+        </div>
+      </div>
+      <div class="demo">
+        <div class="bar"><span>import</span><span>~35s</span></div>
+        <div class="in"><span class="c">url:</span> youtube.com/watch?v=Kq3jaB… <span class="c">▊</span></div>
+        <div class="out">
+          <div class="row"><span class="t">00:00</span><span><b>Summary.</b> Nvidia's moat is 17 years of CUDA libraries, not the GPU itself.</span></div>
+          <div class="row"><span class="t">14:32</span><a href="#">CUDA began as a bet nobody at Intel took seriously</a></div>
+          <div class="row"><span class="t">1:02:11</span><a href="#">The 2018 crypto crash nearly killed the datacenter play</a></div>
+          <div class="row"><span class="t">2:41:05</span><a href="#">Today's margins depend on software, not silicon</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="pipeline">
+  <div class="wrap">
+    <h2><span class="idx">01</span>Pipeline</h2>
+    <div class="pipeline">
+      <div class="stage">
+        <span class="n">stage 1</span>
+        <h3>Transcript</h3>
+        <p>Pulled straight from YouTube. Any language with captions works.</p>
+      </div>
+      <div class="stage">
+        <span class="n">stage 2</span>
+        <h3>Condense</h3>
+        <p>The transcript becomes a deck: thesis, key points, headline number, quote, timeline, closer. Same shape every time.</p>
+      </div>
+      <div class="stage">
+        <span class="n">stage 3</span>
+        <h3>File</h3>
+        <p>Sorted onto one topic shelf, tagged from your vocabulary. New tags are proposed, never auto-applied.</p>
+      </div>
+      <div class="stage">
+        <span class="n">stage 4</span>
+        <h3>Verify</h3>
+        <p>Optional: the comment section is read against the deck. Disputed claims get caveats.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="spec">
+  <div class="wrap">
+    <h2><span class="idx">02</span>Spec</h2>
+    <table>
+      <tr><th>Property</th><th>Value</th></tr>
+      <tr><td>Summary form</td><td>6 sections, fixed order. <span class="d">Once you've read one, you can skim any of them.</span></td></tr>
+      <tr><td>Deep links</td><td>Every key point → timestamp in the source video. <span class="d">Verify, don't trust.</span></td></tr>
+      <tr><td>Library</td><td>Topic shelves (one per video) + tags (many). <span class="d">AI-attached tags are marked and revertible in bulk.</span></td></tr>
+      <tr><td>Queue</td><td>unread / reading / read, plus starred. <span class="d">An inbox, not a feed.</span></td></tr>
+      <tr><td>Community check</td><td>On demand, per video. <span class="d">Needs 3+ substantive comments to say anything at all — praise and memes don't count.</span></td></tr>
+      <tr><td>Accounts</td><td>None. <span class="d">Single user, self-hosted, your database.</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="idx">03</span>Details that matter</h2>
+    <ul class="facts">
+      <li><b>Transcripts are stored,</b> so summaries re-render offline without touching YouTube again.</li>
+      <li><b>Comment text is treated as untrusted input</b> — sanitised, fenced, and never shown to the tagger.</li>
+      <li><b>Quotes from comments are verified verbatim</b> against the scraped thread before they're shown.</li>
+      <li><b>A failed tagging run never loses the summary.</b> You keep the deck and file it by hand.</li>
+      <li><b>No autoplay, no thumbnails, no recommendations.</b> The queue only contains what you put in it.</li>
+      <li><b>One import ≈ 35 seconds.</b> A three-hour podcast reads in about six minutes.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <p>The demo has a dozen real summaries loaded. No sign-up.</p>
+    <a class="btn" href="/app">Open app</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>reel-notes</span>
+    <span>fastapi · pocketbase · react — one docker-compose</span>
+  </div>
+</footer>
+
+</body>
+</html>

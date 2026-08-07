@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reel Notes — Quiet</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --faint: #a3a3a3;
+    --rule: #e4e4e4;
+    --bg: #ffffff;
+    --accent: #c2410c;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+  header {
+    padding: 28px 0;
+  }
+  header .wrap { display: flex; justify-content: space-between; align-items: baseline; }
+  .wordmark { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+  nav { display: flex; gap: 24px; font-size: 14px; color: var(--muted); }
+  nav a:hover { color: var(--ink); }
+  nav .go { color: var(--ink); font-weight: 500; }
+  nav .go::after { content: " →"; }
+
+  .hero { padding: 96px 0 72px; }
+  h1 {
+    font-size: clamp(34px, 5.5vw, 52px);
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+    max-width: 640px;
+  }
+  .hero p {
+    margin-top: 24px;
+    font-size: 18px;
+    color: var(--muted);
+    max-width: 540px;
+  }
+  .hero .actions { margin-top: 36px; display: flex; gap: 20px; align-items: center; }
+  .btn {
+    display: inline-block;
+    background: var(--ink);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 11px 22px;
+    border-radius: 6px;
+  }
+  .btn:hover { background: #000; }
+  .quiet-link { font-size: 15px; color: var(--muted); border-bottom: 1px solid var(--rule); padding-bottom: 1px; }
+  .quiet-link:hover { color: var(--ink); border-color: var(--ink); }
+
+  /* deck strip — plain rendition of an actual deck */
+  .deck { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 48px 0; }
+  .deck-label { font-family: var(--mono); font-size: 12px; color: var(--faint); margin-bottom: 20px; }
+  .strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .slide { background: #fff; padding: 22px 20px 26px; min-height: 190px; display: flex; flex-direction: column; }
+  .slide .kind { font-family: var(--mono); font-size: 11px; color: var(--faint); margin-bottom: 12px; }
+  .slide .body { font-size: 14.5px; line-height: 1.5; }
+  .slide .body em { font-style: normal; color: var(--accent); }
+  .slide ol { padding-left: 18px; font-size: 13.5px; color: #333; display: grid; gap: 6px; }
+  .slide ol span { color: var(--faint); font-family: var(--mono); font-size: 11px; margin-left: 6px; }
+  .slide .stat { font-size: 40px; font-weight: 650; letter-spacing: -0.03em; margin: 4px 0 8px; }
+  .slide .cap { font-size: 13px; color: var(--muted); }
+  .slide .foot { margin-top: auto; padding-top: 14px; font-family: var(--mono); font-size: 10.5px; color: var(--faint); display: flex; justify-content: space-between; }
+
+  section { padding: 72px 0; }
+  h2 { font-size: 15px; font-weight: 600; margin-bottom: 28px; }
+
+  .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+  .how h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .how p { font-size: 14.5px; color: var(--muted); }
+  .how .n { font-family: var(--mono); font-size: 12px; color: var(--faint); display: block; margin-bottom: 14px; }
+
+  .feats { border-top: 1px solid var(--rule); }
+  .feat-row {
+    display: grid; grid-template-columns: 220px 1fr; gap: 24px;
+    padding: 20px 0; border-bottom: 1px solid var(--rule);
+  }
+  .feat-row dt { font-size: 15px; font-weight: 550; }
+  .feat-row dd { font-size: 14.5px; color: var(--muted); max-width: 560px; }
+
+  .last { padding: 88px 0 96px; }
+  .last h2 { font-size: clamp(24px, 3.5vw, 32px); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .last p { color: var(--muted); font-size: 16px; margin-bottom: 32px; max-width: 480px; }
+
+  footer { border-top: 1px solid var(--rule); padding: 24px 0 48px; }
+  footer .wrap { display: flex; justify-content: space-between; font-size: 13px; color: var(--faint); }
+
+  @media (max-width: 720px) {
+    .strip, .how { grid-template-columns: 1fr; }
+    .feat-row { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="wordmark" href="/">Reel Notes</a>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a class="go" href="/app">Open the app</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <h1>Your YouTube subscriptions, as a reading queue.</h1>
+    <p>Paste a link, get a six-part summary you can read in a few minutes — with every claim time-stamped back to the exact second of the video.</p>
+    <div class="actions">
+      <a class="btn" href="/app">Open the app</a>
+      <a class="quiet-link" href="#deck">See a summary</a>
+    </div>
+  </div>
+</div>
+
+<div class="deck" id="deck">
+  <div class="wrap">
+    <div class="deck-label">acquired · the nvidia decade · 3h 09m watched for you</div>
+    <div class="strip">
+      <div class="slide">
+        <div class="kind">summary</div>
+        <div class="body">Nvidia's moat isn't the GPU — it's <em>17 years of CUDA libraries</em> that no competitor can replicate inside a single product cycle.</div>
+        <div class="foot"><span>reel notes</span><span>1 / 6</span></div>
+      </div>
+      <div class="slide">
+        <div class="kind">key points</div>
+        <ol>
+          <li>CUDA started as a bet nobody at Intel took seriously <span>14:32</span></li>
+          <li>The 2018 crypto crash nearly killed the datacenter play <span>1:02:11</span></li>
+          <li>Margins today depend on software, not silicon <span>2:41:05</span></li>
+        </ol>
+        <div class="foot"><span>tap a point to jump there</span><span>2 / 6</span></div>
+      </div>
+      <div class="slide">
+        <div class="kind">by the numbers</div>
+        <div class="stat">76%</div>
+        <div class="cap">gross margin — up from 56% five years ago, carried almost entirely by the software stack.</div>
+        <div class="foot"><span>reel notes</span><span>3 / 6</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <div class="how">
+      <div>
+        <span class="n">01</span>
+        <h3>Paste a link</h3>
+        <p>Any YouTube URL — a talk, a podcast, a three-hour deep dive you were never going to watch.</p>
+      </div>
+      <div>
+        <span class="n">02</span>
+        <h3>We read the transcript</h3>
+        <p>The full transcript is condensed into a fixed six-part form: thesis, key points, a headline number, the quote, timeline, closer.</p>
+      </div>
+      <div>
+        <span class="n">03</span>
+        <h3>You read, then verify</h3>
+        <p>Every key point links to its timestamp. If a claim smells off, you're one click from the source — at the exact second.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <h2>What's in it</h2>
+    <dl class="feats">
+      <div class="feat-row">
+        <dt>Files itself</dt>
+        <dd>Each video is sorted onto one of your topic shelves and tagged. Suggested new tags wait for your approval — the library never grows behind your back.</dd>
+      </div>
+      <div class="feat-row">
+        <dt>Community check</dt>
+        <dd>One button reads the comment section against the summary. If commenters credibly dispute a claim, that claim gets a caveat. Most videos get nothing — that's the point.</dd>
+      </div>
+      <div class="feat-row">
+        <dt>Reading states</dt>
+        <dd>Unread, reading, read — plus a star. Your queue behaves like an inbox, not a feed.</dd>
+      </div>
+      <div class="feat-row">
+        <dt>Yours</dt>
+        <dd>Self-hosted, single user, no accounts. Summaries and transcripts live in your own database and re-render offline.</dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<section class="last">
+  <div class="wrap">
+    <h2>Twelve hours of video is forty minutes of reading.</h2>
+    <p>The demo is loaded with real summaries. No sign-up, no email.</p>
+    <a class="btn" href="/app">Open the app</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Reel Notes</span>
+    <span>self-hosted · v0.4</span>
+  </div>
+</footer>
+
+</body>
+</html>
