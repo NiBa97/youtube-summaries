@@ -7,7 +7,7 @@ const PALETTE = {
   surface: '#faf6ec',
   ink: '#2a2419',
   muted: '#7a6f5e',
-  accent: '#a85a2a',
+  accent: '#8a3324',
   rule: 'rgba(42,36,25,.14)',
 }
 
