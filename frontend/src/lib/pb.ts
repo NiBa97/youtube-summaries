@@ -101,6 +101,7 @@ export function recordToVideo(r: VideoRecord): Video {
     tagSource: tagSource(r.tag_source),
     readingTime: 0,
     tldr: deck?.tldr,
+    instructions: r.instructions || '',
     summary: summaryFromDeck(deck),
     deck,
     transcript,
@@ -114,7 +115,7 @@ export async function listVideos(): Promise<Video[]> {
   return records.map(recordToVideo)
 }
 
-export async function createVideo(input: {
+type VideoInput = {
   url: string
   video_id: string
   title: string
@@ -125,27 +126,47 @@ export async function createVideo(input: {
   topic?: string | null
   tags?: string[]
   tag_source?: TagSource
-}): Promise<Video> {
-  const payload = {
+}
+
+function videoPayload(input: VideoInput) {
+  return {
     ...input,
     instructions: input.instructions ?? '',
     topic: input.topic || '',
     tags: input.tags || [],
     tag_source: input.tag_source || {},
     status: 'slides_ready' as const,
-    read_status: 'unread' as const,
   }
-  let existing: VideoRecord | null = null
-  try {
-    existing = await pb
-      .collection('videos')
-      .getFirstListItem<VideoRecord>(`video_id="${input.video_id}"`)
-  } catch {
-    existing = null
-  }
-  const rec = existing
-    ? await pb.collection('videos').update<VideoRecord>(existing.id, payload, { expand: VIDEO_EXPAND })
-    : await pb.collection('videos').create<VideoRecord>(payload, { expand: VIDEO_EXPAND })
+}
+
+export async function createVideo(input: VideoInput): Promise<Video> {
+  // The dialog checks for a duplicate before it ever gets here, so this lookup
+  // only catches a stale list (another tab, another device). Falling through to
+  // a re-run beats failing on the unique `video_id` index.
+  const existing = await pb
+    .collection('videos')
+    .getFirstListItem<VideoRecord>(`video_id="${input.video_id}"`)
+    .catch(() => null)
+  if (existing) return rerunVideo(existing.id, input)
+
+  const rec = await pb
+    .collection('videos')
+    .create<VideoRecord>({ ...videoPayload(input), read_status: 'unread' as const }, { expand: VIDEO_EXPAND })
+  return recordToVideo(rec)
+}
+
+/**
+ * Replace an existing video's deck with a freshly generated one.
+ *
+ * Everything the reader owns survives: `read_status` and `starred` are never in
+ * the payload, and the caller's `tags` come from a picker seeded with what was
+ * already on the record. `comments` is cleared because it described the deck
+ * that just got replaced - the community section went with it.
+ */
+export async function rerunVideo(id: string, input: VideoInput): Promise<Video> {
+  const rec = await pb
+    .collection('videos')
+    .update<VideoRecord>(id, { ...videoPayload(input), comments: [] }, { expand: VIDEO_EXPAND })
   return recordToVideo(rec)
 }
 

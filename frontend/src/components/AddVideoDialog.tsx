@@ -3,7 +3,7 @@ import type { Tag, TagSource, Video } from '../types'
 import { Icon } from './Icon'
 import { Btn } from './atoms'
 import { postSlides, type SlidesResponse } from '../lib/api'
-import { createVideo } from '../lib/pb'
+import { createVideo, rerunVideo } from '../lib/pb'
 import { AUTO_APPLY_THRESHOLD, buildVocabulary, ensureTags, normalizeTag, suggestedValue } from '../lib/tags'
 import { TagPicker, type PickerValue } from './TagPicker'
 
@@ -11,6 +11,7 @@ type Props = {
   open: boolean
   onClose: () => void
   onAdd: (video: Video) => void
+  onOpenExisting: (id: string) => void
   tags: Tag[]
   videos: Video[]
   onVocabularyChange: () => void
@@ -41,7 +42,7 @@ function parseYouTubeId(input: string): string | null {
   return null
 }
 
-export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabularyChange }: Props) {
+export function AddVideoDialog({ open, onClose, onAdd, onOpenExisting, tags, videos, onVocabularyChange }: Props) {
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
   const [instructions, setInstructions] = useState('')
@@ -53,7 +54,12 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
   /** Norms the classifier proposed and pre-selected, so provenance can be
    *  recorded honestly: anything else on the final list was your call. */
   const [aiNorms, setAiNorms] = useState<Set<string>>(new Set())
+  /** The library video this run replaces. Set only by an explicit click on
+   *  "Re-summarise", never inferred - a paste that happens to be a duplicate
+   *  must not silently overwrite a deck you already read and tagged. */
+  const [rerunOf, setRerunOf] = useState<Video | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const instructionsRef = useRef<HTMLTextAreaElement | null>(null)
 
   useEffect(() => {
     if (open) {
@@ -66,6 +72,7 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
       setResult(null)
       setPicked({ topicId: null, tagNames: [] })
       setAiNorms(new Set())
+      setRerunOf(null)
       setTimeout(() => inputRef.current?.focus(), 30)
     }
   }, [open])
@@ -86,6 +93,22 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
     return id ? normalizeYouTubeSource(url, id) : null
   }
 
+  // Matched in memory against the list the app already holds: no round trip, so
+  // the warning lands while you are still looking at the box you pasted into.
+  const parsedId = parseYouTubeId(url)
+  const duplicate = parsedId ? videos.find((v) => v.youtubeId === parsedId) || null : null
+  // The choice is pending until you make it. No fetch, no write.
+  const awaitingChoice = !!duplicate && !rerunOf
+
+  const startRerun = (video: Video) => {
+    setRerunOf(video)
+    // Start from what the deck was generated with, so refining an instruction is
+    // an edit rather than a re-type - and keep the title you gave it.
+    setInstructions(video.instructions || '')
+    setTitle(video.title)
+    setTimeout(() => instructionsRef.current?.focus(), 30)
+  }
+
   // Phase 1: fetch transcript, build the deck, classify against the vocabulary.
   // Nothing is written yet - the suggestions are a proposal, not a decision.
   const fetchDeck = async () => {
@@ -102,11 +125,20 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
       const resp = await postSlides(normalizeYouTubeSource(url, id), {
         title: userTitle || undefined,
         instructions: instructions.trim() || undefined,
+        previous_deck: rerunOf?.deck || undefined,
         vocabulary: buildVocabulary(tags, videos),
       })
       const initial = suggestedValue(resp.classification, tags)
+      // On a re-run the filing you already did is the starting point; the
+      // classifier's suggestions are added to it, never a replacement for it.
+      const seeded: PickerValue = rerunOf
+        ? {
+            topicId: rerunOf.topicId || initial.topicId,
+            tagNames: [...new Set([...rerunOf.tags, ...initial.tagNames])],
+          }
+        : initial
       setResult(resp)
-      setPicked(initial)
+      setPicked(seeded)
       setAiNorms(new Set(initial.tagNames.map(normalizeTag)))
       if (resp.language_fallback) {
         // Surfaced on the review screen, before anything is written, so the
@@ -133,12 +165,18 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
     setError(null)
     try {
       const resolved = await ensureTags(picked.tagNames, tags)
+      // A tag that was already on the record keeps the provenance it had: a
+      // re-run must not relabel your hand-filing as the model's work.
+      const prior = rerunOf?.tagSource || {}
       const tagSource: TagSource = {}
-      for (const t of resolved) tagSource[t.id] = aiNorms.has(t.norm) ? 'ai' : 'human'
+      for (const t of resolved) tagSource[t.id] = prior[t.id] || (aiNorms.has(t.norm) ? 'ai' : 'human')
       const suggestedTopic = suggestedValue(result.classification, tags).topicId
-      if (picked.topicId) tagSource[picked.topicId] = picked.topicId === suggestedTopic ? 'ai' : 'human'
+      if (picked.topicId) {
+        tagSource[picked.topicId] =
+          prior[picked.topicId] || (picked.topicId === suggestedTopic ? 'ai' : 'human')
+      }
 
-      const video = await createVideo({
+      const input = {
         url: src,
         video_id: result.video_id,
         title: title.trim() || result.deck?.title || `YouTube ${result.video_id}`,
@@ -148,7 +186,8 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
         topic: picked.topicId,
         tags: resolved.map((t) => t.id),
         tag_source: tagSource,
-      })
+      }
+      const video = rerunOf ? await rerunVideo(rerunOf.id, input) : await createVideo(input)
       onVocabularyChange()
       onAdd(video)
       onClose()
@@ -159,7 +198,10 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
     }
   }
 
-  const submit = () => (result ? save() : fetchDeck())
+  const submit = () => {
+    if (awaitingChoice) return
+    return result ? save() : fetchDeck()
+  }
 
   return (
     <div
@@ -213,10 +255,10 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: 'var(--serif)', fontSize: 16, fontWeight: 500 }}>
-              {result ? 'File it' : 'Add video'}
+              {result ? 'File it' : rerunOf ? 'Re-summarise' : 'Add video'}
             </div>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--muted)', letterSpacing: '.06em' }}>
-              {result ? 'STEP 2 · TOPIC & TAGS' : 'STEP 1 · ONE-SHOT IMPORT'}
+              {result ? 'STEP 2 · TOPIC & TAGS' : rerunOf ? 'STEP 1 · SECOND PASS' : 'STEP 1 · ONE-SHOT IMPORT'}
             </div>
           </div>
           <button
@@ -246,6 +288,14 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
                   onChange={(e) => {
                     setUrl(e.target.value)
                     setError(null)
+                    // Editing the URL away from the video you chose to re-run
+                    // cancels the re-run rather than retargeting it, and drops
+                    // the fields it prefilled - they described the old video.
+                    if (rerunOf && parseYouTubeId(e.target.value) !== rerunOf.youtubeId) {
+                      setRerunOf(null)
+                      setTitle('')
+                      setInstructions('')
+                    }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') submit()
@@ -254,6 +304,46 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
                   style={inputStyle}
                 />
               </Field>
+
+              {duplicate && (
+                <div
+                  style={{
+                    border: '1px solid var(--rule-strong)',
+                    borderRadius: 8,
+                    padding: '10px 12px',
+                    background: 'var(--surface-2)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '.1em' }}>
+                    ALREADY IN YOUR LIBRARY
+                  </div>
+                  <div style={{ fontFamily: 'var(--serif)', fontSize: 13.5, lineHeight: 1.35 }}>
+                    {duplicate.title}
+                  </div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--muted)' }}>
+                    Added {new Date(duplicate.addedAt).toLocaleDateString()} · {duplicate.status}
+                    {duplicate.instructions ? ' · has custom instruction' : ''}
+                  </div>
+                  {awaitingChoice ? (
+                    <div style={{ display: 'flex', gap: 8, paddingTop: 2 }}>
+                      <Btn onClick={() => onOpenExisting(duplicate.id)} kind="outline" size="sm" icon="check">
+                        Open it
+                      </Btn>
+                      <Btn onClick={() => startRerun(duplicate)} kind="ghost" size="sm" icon="plus">
+                        Re-summarise
+                      </Btn>
+                    </div>
+                  ) : (
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--muted)', lineHeight: 1.5 }}>
+                      Its deck will be replaced. Read state, star and tags are kept.
+                    </div>
+                  )}
+                </div>
+              )}
+
               <Field label="TITLE (OPTIONAL)">
                 <input
                   value={title}
@@ -265,8 +355,9 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
                   style={inputStyle}
                 />
               </Field>
-              <Field label="CUSTOM INSTRUCTION (OPTIONAL)">
+              <Field label={rerunOf ? 'WHAT THE FIRST PASS MISSED' : 'CUSTOM INSTRUCTION (OPTIONAL)'}>
                 <textarea
+                  ref={instructionsRef}
                   value={instructions}
                   maxLength={1000}
                   rows={3}
@@ -278,7 +369,9 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
                   style={{ ...inputStyle, resize: 'vertical', minHeight: 62, lineHeight: 1.45 }}
                 />
                 <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '.04em' }}>
-                  Steers what the summary covers. {instructions.length}/1000
+                  {rerunOf
+                    ? `The old deck is sent along with this, so the model knows what it already tried. ${instructions.length}/1000`
+                    : `Steers what the summary covers. ${instructions.length}/1000`}
                 </span>
               </Field>
             </>
@@ -343,7 +436,11 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
                 : 'Fetching transcript, generating slides and classifying… can take 10–30s.'
               : result
                 ? `Existing tags above ${Math.round(AUTO_APPLY_THRESHOLD * 100)}% are pre-selected. Dashed chips are new tags — they are only created if you keep them.`
-                : 'Submits URL to backend → transcript + Gemini slide deck → saved to Pocketbase.'}
+                : awaitingChoice
+                  ? 'This video is already summarised. Open it, or re-summarise it with a new instruction.'
+                  : rerunOf
+                    ? 'Runs the whole pipeline again with the old deck as context, then overwrites its summary.'
+                    : 'Submits URL to backend → transcript + Gemini slide deck → saved to Pocketbase.'}
           </div>
         </div>
 
@@ -360,9 +457,23 @@ export function AddVideoDialog({ open, onClose, onAdd, tags, videos, onVocabular
           <Btn onClick={onClose} kind="ghost">
             Cancel
           </Btn>
-          <Btn onClick={submit} kind="accent" icon={result ? 'check' : 'plus'}>
-            {busy ? (result ? 'Saving…' : 'Generating…') : result ? 'Save to library' : 'Fetch & classify'}
-          </Btn>
+          {/* Nothing to submit while the duplicate choice is open: the primary
+              action would otherwise be "silently overwrite what you already read". */}
+          {!awaitingChoice && (
+            <Btn onClick={submit} kind="accent" icon={result ? 'check' : 'plus'}>
+              {busy
+                ? result
+                  ? 'Saving…'
+                  : 'Generating…'
+                : result
+                  ? rerunOf
+                    ? 'Replace summary'
+                    : 'Save to library'
+                  : rerunOf
+                    ? 'Re-summarise'
+                    : 'Fetch & classify'}
+            </Btn>
+          )}
         </div>
       </div>
     </div>

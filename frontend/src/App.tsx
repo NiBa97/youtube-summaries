@@ -220,6 +220,10 @@ function App() {
         open={addOpen}
         onClose={() => setAddOpen(false)}
         onAdd={onAddVideo}
+        onOpenExisting={(id) => {
+          setAddOpen(false)
+          onSelect(id)
+        }}
         tags={tags}
         videos={videos}
         onVocabularyChange={reloadTags}

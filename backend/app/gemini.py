@@ -56,10 +56,17 @@ def generate_deck(
     transcript_text: str,
     transcript_language: str | None = None,
     instructions: str | None = None,
+    previous_deck: str | None = None,
     validate: Callable[[dict[str, Any]], str | None] | None = None,
 ) -> dict[str, Any]:
     """Generate a deck. If `validate` returns an error string, re-prompt the
-    model with those errors and let it correct itself."""
+    model with those errors and let it correct itself.
+
+    `previous_deck` is a rejected earlier deck of the same video, sent so a
+    re-run can go somewhere new instead of reproducing what the reader already
+    turned down. It is flattened by the caller, which is also what keeps
+    comment-derived text out of it.
+    """
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY not set")
@@ -72,12 +79,17 @@ def generate_deck(
     if transcript_language and transcript_language.strip():
         language_line = f"LANGUAGE:     {transcript_language.strip()}\n"
 
+    previous_block = ""
+    if previous_deck and previous_deck.strip():
+        previous_block = f"PREVIOUS SUMMARY:\n{previous_deck.strip()}\n"
+
     user_input = (
         f"CHANNEL:      {channel}\n"
         f"TITLE:        {title}\n"
         f"DURATION:     {duration}\n"
         f"{language_line}"
         f"{instruction_line}"
+        f"{previous_block}"
         f"TRANSCRIPT:\n{transcript_text}\n"
     )
 

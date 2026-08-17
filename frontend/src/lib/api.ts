@@ -106,6 +106,9 @@ export async function postSlides(
     channel?: string
     title?: string
     instructions?: string
+    /** A deck of this video the reader rejected. Sent on a re-run so the model
+     *  is told what has already been tried instead of landing on it again. */
+    previous_deck?: Deck
     vocabulary?: Vocabulary
   } = {},
 ): Promise<SlidesResponse> {

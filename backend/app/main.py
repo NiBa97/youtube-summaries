@@ -347,6 +347,17 @@ def _deck_body(deck: "Deck") -> str:
     return "\n".join(_block_text(block) for block in deck.blocks)
 
 
+def _deck_for_rerun(deck: "Deck") -> str:
+    """A rejected deck, flattened for the deck prompt on a re-run.
+
+    Goes through `_block_text` like every other reader of a deck, so the
+    community section and block caveats - which originate in public comments -
+    never re-enter the generation prompt. Comment text stays on the one narrow
+    path it is allowed on.
+    """
+    return f"{deck.title}\n{deck.tldr}\n" + _deck_body(deck)
+
+
 def _deck_listing(deck: "Deck") -> str:
     """The deck as numbered lines, so a caveat can name the block it qualifies."""
     return "\n".join(f"[b{i:02d}] {_block_text(b)}" for i, b in enumerate(deck.blocks, start=1))
@@ -482,6 +493,11 @@ class SlidesRequest(BaseModel):
         default=None,
         max_length=1000,
         description="Short custom directive appended to the deck prompt, e.g. 'name every card mentioned'",
+    )
+    previous_deck: Deck | None = Field(
+        default=None,
+        description="A deck of this video the reader rejected. Sent on a re-run so "
+                    "the new deck goes somewhere else instead of repeating it.",
     )
     vocabulary: Vocabulary | None = Field(
         default=None,
@@ -665,6 +681,7 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
             transcript_text=transcript_text,
             transcript_language=fetched.language,
             instructions=req.instructions,
+            previous_deck=_deck_for_rerun(req.previous_deck) if req.previous_deck else None,
             validate=_deck_validation_error,
         )
         deck = Deck.model_validate(raw_deck)

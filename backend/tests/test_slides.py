@@ -119,6 +119,52 @@ def test_slides_endpoint_instructions_default_none(mock_api_cls, mock_gen):
     r = client.post("/slides", json={"url": "dQw4w9WgXcQ"})
     assert r.status_code == 200, r.text
     assert mock_gen.call_args.kwargs["instructions"] is None
+    assert mock_gen.call_args.kwargs["previous_deck"] is None
+
+
+@patch("app.main.generate_deck")
+@patch("app.main.YouTubeTranscriptApi")
+def test_slides_endpoint_passes_previous_deck_flattened(mock_api_cls, mock_gen):
+    """A re-run sends the rejected deck so the model can go somewhere else.
+
+    Comment-derived text (`community`, block `caveat`) must not ride along: it
+    would put untrusted input back on the generation path.
+    """
+    mock_api_cls.return_value.fetch.return_value = _fake_fetched()
+    mock_gen.return_value = {
+        "title": "Title",
+        "tldr": "Short summary",
+        "blocks": [{"type": "claim", "title": "t", "body": "b"}],
+    }
+
+    r = client.post(
+        "/slides",
+        json={
+            "url": "dQw4w9WgXcQ",
+            "instructions": "Name every card mentioned",
+            "previous_deck": {
+                "title": "Old title",
+                "tldr": "Old tldr",
+                "blocks": [{
+                    "type": "claim",
+                    "title": "old claim",
+                    "body": "old body",
+                    "caveat": "Commenters mention kryptocoin",
+                }],
+                "community": {
+                    "sentiment": "critical",
+                    "summary": "Commenters discuss kryptocoin instead",
+                    "notes": [],
+                },
+            },
+        },
+    )
+    assert r.status_code == 200, r.text
+    previous = mock_gen.call_args.kwargs["previous_deck"]
+    assert "Old title" in previous
+    assert "old claim" in previous
+    assert "old body" in previous
+    assert "kryptocoin" not in previous
 
 
 def test_slides_endpoint_bad_url():

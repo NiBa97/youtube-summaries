@@ -64,6 +64,18 @@ def test_instructions_omitted_when_blank():
     assert "INSTRUCTIONS:" not in fake.prompts[0]
 
 
+def test_previous_deck_included_in_prompt():
+    fake, _ = _run([json.dumps(VALID_DECK)], previous_deck="Old title\nOld tldr\nOld claim. Old body")
+    assert "PREVIOUS SUMMARY:\nOld title" in fake.prompts[0]
+    # Ordered before the transcript so the transcript stays the last, longest thing read.
+    assert fake.prompts[0].index("PREVIOUS SUMMARY:") < fake.prompts[0].index("TRANSCRIPT:")
+
+
+def test_previous_deck_omitted_when_absent():
+    fake, _ = _run([json.dumps(VALID_DECK)])
+    assert "PREVIOUS SUMMARY:" not in fake.prompts[0]
+
+
 def test_invalid_deck_is_repaired_on_retry():
     too_many_items = {
         "title": "Title",

@@ -178,6 +178,19 @@ links:            1-3 independent sources, stable URLs
   prominent entries once you run out of room. Group them under headings that
   say what the group is.
 
+# PREVIOUS SUMMARY
+- The input may include a PREVIOUS SUMMARY field: a deck of this same video that
+  was already written and that the reader found insufficient. INSTRUCTIONS says
+  what it was missing.
+- Write a new deck from the transcript. The previous summary tells you what has
+  already been covered and what to do differently; it is not a draft to edit and
+  not a floor to build on.
+- Do not keep its wording, block order, or framing out of inertia. Keep a block
+  only where it is still the best reading of the transcript under the new
+  instruction, and reword it in your own terms.
+- It is prior output, not evidence. A claim is not supported because the previous
+  summary made it - the transcript is the only source.
+
 # LANGUAGE
 - Always write the deck in English, even when the transcript is in another
   language. Translate claims, quotes, and labels; keep names and titles as they
@@ -193,6 +206,8 @@ You will receive:
   DURATION:     {hh:mm:ss}
   LANGUAGE:     {transcript language; may be absent}
   INSTRUCTIONS: {optional reader directive; may be absent}
+  PREVIOUS SUMMARY:
+                {an earlier deck of this video the reader rejected; may be absent}
   TRANSCRIPT:   {full transcript or detailed notes}
 
 Produce the JSON object now.

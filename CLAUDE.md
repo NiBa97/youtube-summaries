@@ -72,7 +72,7 @@ Pocketbase rules on the `videos` collection are wide-open (`listRule`/`viewRule`
 ### Pocketbase schema changes
 
 All schema work goes through migration files in `database/pb_migrations/` (JS migrations, name format `<unix-ts>_<slug>.js`, both `up` and `down`). Do **not** rely on admin-UI changes for anything that needs to be reproducible — they get overwritten when `pb_data/` is reset. Existing collections:
-- `videos` (id `videos00000videos`): `url`, `video_id` (unique, 11 chars), `title`, `status` (ingest state: `pending|transcribed|slides_ready|error`), `slides_html`, `transcript` (json), `deck` (json), `comments` (json), `error`, `topic` (relation→tags, maxSelect 1), `tags` (relation→tags), `tag_source` (json), `read_status` (`unread|reading|read`), `starred` (bool).
+- `videos` (id `videos00000videos`): `url`, `video_id` (unique, 11 chars), `title`, `status` (ingest state: `pending|transcribed|slides_ready|error`), `slides_html`, `transcript` (json), `deck` (json), `comments` (json), `instructions` (the directive the deck was generated with), `error`, `topic` (relation→tags, maxSelect 1), `tags` (relation→tags), `tag_source` (json), `read_status` (`unread|reading|read`), `starred` (bool).
 - `tags` (id `tags00000000tags`): `name`, `norm` (unique), `kind` (`topic|tag`), `color`, `sort`.
 
 Note `status` (ingest pipeline) and `read_status` (have you read it) are different fields.
@@ -113,6 +113,18 @@ uv run python scripts/backfill_tags.py --revert     # strip every ai-attached ta
 They talk to Pocketbase over REST (`PB_URL`, default `http://localhost/pb`) with stdlib only.
 
 `docs/library-management-options.html` is the report the design came from, including the options that were rejected.
+
+### Re-importing a video (second pass)
+
+Pasting a URL that is already in the library is a normal thing to do — usually because the first summary missed something. `video_id` is unique, so this was previously a silent upsert: the second import overwrote the deck **and** reset `read_status` and clobbered hand-made tags, with no UI signal that anything had been replaced.
+
+The rule now is that a duplicate is a **choice, never an inference**:
+
+- `AddVideoDialog` matches the pasted id against the in-memory `videos` list as you type — no round trip, so the warning lands while you are still looking at the box. The primary button is *removed* while the choice is open, so nothing can be overwritten by muscle memory. You get *Open it* or *Re-summarise*.
+- A re-run sends `previous_deck` to `/slides`. The prompt frames it as an earlier deck **the reader rejected**, not a draft to edit: the anchoring risk is that the model re-emits the old deck with cosmetic edits, and the instruction is what has to drive the difference. It is also explicitly not evidence — the transcript stays the only source.
+- `_deck_for_rerun()` flattens that deck through `_block_text()`, the same as `_deck_body()`, so the `community` section and block `caveat`s — which originate in public comments — never re-enter the generation prompt. The untrusted path stays exactly as narrow as *Community sentiment* below describes. Pinned by a test.
+- `rerunVideo()` in `lib/pb.ts` writes the new deck without ever putting `read_status` or `starred` in the payload, and the step-2 tag picker is seeded from the tags already on the record, so the classifier adds to your filing instead of replacing it. Tags that were already there keep their existing `tag_source` — a re-run must not relabel your hand-filing as the model's work. Stored `comments` are cleared, because they described the deck that was just replaced.
+- `createVideo()` still falls back to a re-run if it finds an existing record: the dialog check reads one browser's list, and a second tab would otherwise hit the unique index.
 
 ### Community sentiment
 

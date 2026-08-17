@@ -86,6 +86,9 @@ export type Video = {
   readingTime: number
   sourceUrl?: string
   tldr?: string
+  /** The custom directive the deck was generated with, so a re-run can start
+   *  from it instead of from a blank box. */
+  instructions?: string
   summary: Summary
   deck?: Deck | null
   transcript?: TranscriptSnippet[]
