@@ -140,6 +140,18 @@
 
   // ---------- ui ----------
 
+  // YouTube enforces Trusted Types: a plain innerHTML assignment throws and the
+  // whole script dies silently. Every markup write goes through this.
+  let ttPolicy = null
+  try {
+    ttPolicy = window.trustedTypes ? window.trustedTypes.createPolicy('yts-userscript', { createHTML: (s) => s }) : null
+  } catch {
+    // policy name refused; fall through to plain strings
+  }
+  const setHTML = (el, html) => {
+    el.innerHTML = ttPolicy ? ttPolicy.createHTML(html) : html
+  }
+
   const CSS = `
     :host { all: initial; }
     * { box-sizing: border-box; font-family: system-ui, sans-serif; }
@@ -170,7 +182,7 @@
 
   const host = document.createElement('div')
   const root = host.attachShadow({ mode: 'open' })
-  root.innerHTML = `<style>${CSS}</style><button class="fab" hidden>＋ Summarise</button><div class="panel" hidden></div>`
+  setHTML(root, `<style>${CSS}</style><button class="fab" hidden>＋ Summarise</button><div class="panel" hidden></div>`)
   const fab = root.querySelector('.fab')
   const panel = root.querySelector('.panel')
   document.documentElement.appendChild(host)
@@ -185,7 +197,7 @@
     runId++
     run = null
     panel.hidden = true
-    panel.innerHTML = ''
+    setHTML(panel, '')
   }
 
   function syncFab() {
@@ -366,8 +378,8 @@
     } else if (p === 'failed') {
       html = `<h3>Failed</h3>${err}<div class="row"><button class="btn" data-retry>Retry</button></div>`
     }
-    panel.innerHTML = html
-    if (p === 'review' && run.error) panel.insertAdjacentHTML('beforeend', err)
+    setHTML(panel, html)
+    if (p === 'review' && run.error) setHTML(panel, html + err)
   }
 
   panel.addEventListener('click', (e) => {
