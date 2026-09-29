@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Summaries – add to library
 // @namespace    https://github.com/NiBa97/youtube-summaries
-// @version      0.1.0
+// @version      0.1.1
 // @description  Summarise the YouTube video you are watching, file it into your library, all from the watch page.
 // @match        https://www.youtube.com/*
 // @match        https://m.youtube.com/*
@@ -27,6 +27,35 @@
  */
 (function () {
   'use strict'
+
+  const VERSION = '0.1.1'
+
+  // Status bar, pinned to the bottom. Built with createElement/textContent only
+  // (no innerHTML) and before anything else, so it shows even if the rest of the
+  // script fails. Click it to dismiss.
+  const bar = document.createElement('div')
+  bar.style.cssText =
+    'position:fixed;left:0;right:0;bottom:0;z-index:2147483647;padding:4px 12px;font:12px system-ui,sans-serif;' +
+    'background:#222;color:#fff;cursor:pointer;opacity:.92'
+  bar.addEventListener('click', () => bar.remove())
+  const setStatus = (msg, isErr) => {
+    bar.textContent = `YT Summaries v${VERSION} · ${msg}`
+    bar.style.background = isErr ? '#9a3b2f' : '#222'
+  }
+  setStatus('starting…')
+  document.documentElement.appendChild(bar)
+  window.addEventListener('error', (e) => {
+    if (e.filename && e.filename.includes('userscript')) setStatus('error: ' + e.message, true)
+  })
+
+  try {
+    main()
+  } catch (e) {
+    setStatus('failed to start: ' + (e && e.message), true)
+    console.error('[YT Summaries]', e)
+  }
+
+  function main() {
 
   const AUTO_APPLY_THRESHOLD = 0.75
   const DEFAULT_BASE = 'http://localhost'
@@ -203,6 +232,7 @@
   function syncFab() {
     const id = currentVideoId()
     fab.hidden = !id
+    setStatus(id ? `loaded ✓ · video ${id} · click ＋ Summarise (bottom right)` : 'loaded ✓ · open a video to see the button')
     if (run && run.videoId !== id && !run.busy) resetRun()
   }
   window.addEventListener('yt-navigate-finish', syncFab)
@@ -401,4 +431,5 @@
   panel.addEventListener('input', (e) => {
     if (run && e.target.matches('[data-instr]')) run.instructions = e.target.value
   })
+  }
 })()
