@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Summaries – add to library
 // @namespace    https://github.com/NiBa97/youtube-summaries
-// @version      0.1.1
+// @version      0.2.0
 // @description  Summarise the YouTube video you are watching, file it into your library, all from the watch page.
 // @match        https://www.youtube.com/*
 // @match        https://m.youtube.com/*
@@ -28,7 +28,7 @@
 (function () {
   'use strict'
 
-  const VERSION = '0.1.1'
+  const VERSION = '0.2.0'
 
   // Status bar, pinned to the bottom. Built with createElement/textContent only
   // (no innerHTML) and before anything else, so it shows even if the rest of the
@@ -160,12 +160,21 @@
 
   // ---------- page ----------
 
-  function currentVideoId() {
-    const u = new URL(location.href)
-    if (u.pathname === '/watch') return u.searchParams.get('v')
+  function idFromHref(href) {
+    let u
+    try {
+      u = new URL(href, location.origin)
+    } catch {
+      return null
+    }
+    if (u.pathname === '/watch') {
+      const v = u.searchParams.get('v')
+      return v && /^[\w-]{11}$/.test(v) ? v : null
+    }
     const m = u.pathname.match(/^\/(?:shorts|live|embed)\/([\w-]{11})/)
     return m ? m[1] : null
   }
+  const currentVideoId = () => idFromHref(location.href)
 
   // ---------- ui ----------
 
@@ -186,6 +195,10 @@
     * { box-sizing: border-box; font-family: system-ui, sans-serif; }
     .fab { position: fixed; right: 20px; bottom: 20px; z-index: 2147483647; padding: 10px 16px; border-radius: 999px;
       border: 0; background: #a85a2a; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.35); }
+    .thumb { position: fixed; z-index: 2147483647; width: 30px; height: 30px; border-radius: 8px; border: 0; padding: 0;
+      background: #a85a2a; color: #fff; font-size: 20px; line-height: 30px; text-align: center; cursor: pointer;
+      box-shadow: 0 1px 6px rgba(0,0,0,.5); }
+    .thumb:hover { background: #c0692f; }
     .panel { position: fixed; right: 20px; bottom: 70px; z-index: 2147483647; width: 380px; max-width: calc(100vw - 40px);
       max-height: calc(100vh - 100px); overflow: auto; background: #fffdf8; color: #222; border: 1px solid #d8cfc0;
       border-radius: 12px; padding: 16px; box-shadow: 0 8px 30px rgba(0,0,0,.35); font-size: 13px; line-height: 1.45; }
@@ -211,9 +224,10 @@
 
   const host = document.createElement('div')
   const root = host.attachShadow({ mode: 'open' })
-  setHTML(root, `<style>${CSS}</style><button class="fab" hidden>＋ Summarise</button><div class="panel" hidden></div>`)
+  setHTML(root, `<style>${CSS}</style><button class="fab" hidden>＋ Summarise</button><button class="thumb" title="Summarise this video" hidden>＋</button><div class="panel" hidden></div>`)
   const fab = root.querySelector('.fab')
   const panel = root.querySelector('.panel')
+  const thumbBtn = root.querySelector('.thumb')
   document.documentElement.appendChild(host)
 
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
@@ -232,27 +246,83 @@
   function syncFab() {
     const id = currentVideoId()
     fab.hidden = !id
-    setStatus(id ? `loaded ✓ · video ${id} · click ＋ Summarise (bottom right)` : 'loaded ✓ · open a video to see the button')
-    if (run && run.videoId !== id && !run.busy) resetRun()
+    setStatus(id ? `loaded ✓ · video ${id} · click ＋ Summarise (bottom right) or hover any thumbnail` : 'loaded ✓ · hover a thumbnail and click ＋')
   }
   window.addEventListener('yt-navigate-finish', syncFab)
   setInterval(syncFab, 1500) // m.youtube.com and edge cases don't fire yt-navigate-finish
   syncFab()
 
+  // Open the panel for a given video. A run in flight is never clobbered; a
+  // finished or idle one is replaced when you pick a different video.
+  function openFor(videoId) {
+    if (!videoId) return
+    if (run && run.busy && run.videoId !== videoId) {
+      panel.hidden = false
+      render()
+      return
+    }
+    if (run && run.videoId !== videoId) resetRun()
+    panel.hidden = false
+    if (!run) start(videoId)
+    else render()
+  }
+
   fab.addEventListener('click', () => {
-    if (!panel.hidden) {
+    if (!panel.hidden && (!run || run.videoId === currentVideoId())) {
       panel.hidden = true
       return
     }
-    panel.hidden = false
-    if (!run) start()
-    else render()
+    openFor(currentVideoId())
+  })
+
+  // One floating button that follows the hovered thumbnail. Fixed positioning
+  // sidesteps YouTube's per-layout stacking/overflow; delegated listeners
+  // survive its endless re-rendering.
+  let hoverId = null
+  let hideTimer = null
+  const hideThumb = () => {
+    thumbBtn.hidden = true
+    hoverId = null
+  }
+  document.addEventListener(
+    'mouseover',
+    (e) => {
+      if (e.composedPath().includes(host)) {
+        clearTimeout(hideTimer)
+        return
+      }
+      const a = e.target instanceof Element && e.target.closest('a[href*="/watch?v="], a[href^="/shorts/"], a[href^="/live/"]')
+      const id = a && idFromHref(a.getAttribute('href'))
+      // Only anchors that wrap a thumbnail, not title links.
+      if (!id || !a.querySelector('img, yt-image, yt-thumbnail-view-model, yt-collection-thumbnail-view-model, .yt-core-image')) return
+      clearTimeout(hideTimer)
+      const r = a.getBoundingClientRect()
+      if (r.width < 80 || r.height < 40) return
+      hoverId = id
+      thumbBtn.style.left = Math.round(r.right - 38) + 'px'
+      thumbBtn.style.top = Math.round(r.top + 8) + 'px'
+      thumbBtn.hidden = false
+    },
+    true,
+  )
+  document.addEventListener(
+    'mouseout',
+    (e) => {
+      if (e.relatedTarget && e.composedPath().includes(host)) return
+      clearTimeout(hideTimer)
+      hideTimer = setTimeout(hideThumb, 250)
+    },
+    true,
+  )
+  window.addEventListener('scroll', hideThumb, { passive: true, capture: true })
+  thumbBtn.addEventListener('click', (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    openFor(hoverId)
   })
 
   // Load library state (does this video exist? what tags exist?) before offering anything.
-  async function start() {
-    const videoId = currentVideoId()
-    if (!videoId) return
+  async function start(videoId) {
     const my = ++runId
     run = { videoId, phase: 'loading', instructions: '', busy: true }
     render()
@@ -273,7 +343,7 @@
       run.busy = false
       run.phase = 'failed'
       run.error = e.message
-      run.retry = start
+      run.retry = () => start(videoId)
     }
     render()
   }

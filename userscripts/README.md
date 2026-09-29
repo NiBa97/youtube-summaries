@@ -1,6 +1,6 @@
 # Tampermonkey userscript
 
-Adds a **＋ Summarise** button on YouTube watch pages. Runs the same pipeline as the app's *Add video* dialog: `/api/slides` → pick topic/tags → write to Pocketbase.
+Adds a **＋** button on every thumbnail you hover (home, search, sidebar, subscriptions) and a **＋ Summarise** button on watch pages. Runs the same pipeline as the app's *Add video* dialog: `/api/slides` → pick topic/tags → write to Pocketbase.
 
 ## Install
 
