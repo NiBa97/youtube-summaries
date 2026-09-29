@@ -91,7 +91,10 @@ services:
         # Coolify exports SOURCE_COMMIT into the build environment; the
         # deployed sha reaches the UI footer as a build arg, so the image
         # build never needs .git (Coolify's checkout has none).
-        VITE_GIT_SHA: ${VITE_GIT_SHA:-${SOURCE_COMMIT:-unknown}}
+        # Empty is fine: vite.config.ts then asks the GitHub API for the
+        # commit (SOURCE_COMMIT is only set when Coolify's "Include Source
+        # Commit in Build" is on).
+        VITE_GIT_SHA: ${VITE_GIT_SHA:-${SOURCE_COMMIT:-}}
     restart: unless-stopped
     expose:
       - "80"
