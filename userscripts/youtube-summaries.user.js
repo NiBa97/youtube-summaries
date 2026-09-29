@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Summaries – add to library
 // @namespace    https://github.com/NiBa97/youtube-summaries
-// @version      0.2.0
+// @version      0.2.1
 // @description  Summarise the YouTube video you are watching, file it into your library, all from the watch page.
 // @match        https://www.youtube.com/*
 // @match        https://m.youtube.com/*
@@ -28,7 +28,7 @@
 (function () {
   'use strict'
 
-  const VERSION = '0.2.0'
+  const VERSION = '0.2.1'
 
   // Status bar, pinned to the bottom. Built with createElement/textContent only
   // (no innerHTML) and before anything else, so it shows even if the rest of the
@@ -220,6 +220,17 @@
     .steps li.done { color: #3f6b46; } .steps li.done::before { content: '✓ '; }
     .steps li.active { color: #222; font-weight: 600; } .steps li.active::before { content: '… '; }
     a { color: #a85a2a; }
+    .ok { display: flex; gap: 12px; align-items: center; }
+    .check { flex: none; width: 36px; height: 36px; border-radius: 50%; background: #3f6b46; color: #fff; font-size: 20px;
+      line-height: 36px; text-align: center; }
+    .ok .t { font-weight: 700; font-size: 14px; }
+    .ok .s { color: #776; font-size: 12px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .countdown { height: 3px; margin: 14px -16px -16px; background: #eee6d6; border-radius: 0 0 12px 12px; overflow: hidden; }
+    .countdown i { display: block; height: 100%; background: #3f6b46; transform-origin: left;
+      animation: drain var(--ms, 4000ms) linear forwards; }
+    .panel:hover .countdown i { animation-play-state: paused; }
+    @keyframes drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
   `
 
   const host = document.createElement('div')
@@ -413,6 +424,8 @@
       })
       if (my !== runId) return
       run.phase = 'saved'
+      run.savedTitle = (result.deck && result.deck.title) || result.video_id
+      armAutoClose(my)
     } catch (e) {
       if (my !== runId) return
       run.phase = 'failed'
@@ -422,6 +435,24 @@
     run.busy = false
     render()
   }
+
+  // The success card dismisses itself. Hovering it pauses the countdown (CSS)
+  // and the timer, so a link you are reaching for does not vanish.
+  const AUTO_CLOSE_MS = 4000
+  let closeTimer = null
+  function armAutoClose(my) {
+    clearTimeout(closeTimer)
+    closeTimer = setTimeout(() => {
+      if (my === runId && run && run.phase === 'saved' && !panel.matches(':hover')) resetRun()
+    }, AUTO_CLOSE_MS)
+  }
+  panel.addEventListener('mouseleave', () => {
+    if (run && run.phase === 'saved') {
+      // restart the visible bar too, so bar and timer agree
+      setHTML(panel, panel.innerHTML)
+      armAutoClose(runId)
+    }
+  })
 
   function chips(items, isOn, attr, extra = '') {
     return items
@@ -473,8 +504,9 @@
     } else if (p === 'saving') {
       html = `<h3>Saving…</h3><ul class="steps"><li class="done">Deck generated</li><li class="active">Writing to library</li></ul>`
     } else if (p === 'saved') {
-      html = `<h3>Saved ✓</h3><ul class="steps"><li class="done">Deck generated</li><li class="done">Filed &amp; saved</li></ul>
-        <div class="row"><a href="${esc(baseUrl())}" target="_blank" rel="noreferrer">Open library</a></div>`
+      html = `<div class="ok"><div class="check">✓</div><div><div class="t">Saved to library</div><div class="s">${esc(run.savedTitle || '')}</div></div></div>
+        <div class="row"><a href="${esc(baseUrl())}" target="_blank" rel="noreferrer">Open library</a><button class="btn ghost" data-close>Close</button></div>
+        <div class="countdown"><i style="--ms:${AUTO_CLOSE_MS}ms"></i></div>`
     } else if (p === 'failed') {
       html = `<h3>Failed</h3>${err}<div class="row"><button class="btn" data-retry>Retry</button></div>`
     }
@@ -488,7 +520,7 @@
     if ('go' in t.dataset) generate()
     else if ('save' in t.dataset) save()
     else if ('retry' in t.dataset) run.retry && run.retry()
-    else if ('discard' in t.dataset) resetRun()
+    else if ('discard' in t.dataset || 'close' in t.dataset) resetRun()
     else if ('topic' in t.dataset) {
       run.picked.topicId = run.picked.topicId === t.dataset.topic ? null : t.dataset.topic
       render()
