@@ -6,6 +6,11 @@
 #     Coolify's proxy (Traefik) terminates TLS and routes over the docker
 #     network — no host ports are published here.
 #   - Required env: GEMINI_API_KEY
+#   - backend/frontend are prebuilt by GitHub Actions
+#     (.github/workflows/deploy.yml) and pulled from GHCR; nothing is built on
+#     this host. The workflow triggers the deploy webhook after both pushes.
+#     The GHCR packages must be public, or the host needs `docker login ghcr.io`.
+#     The frontend's VITE_* values and git sha are baked in at CI build time.
 #
 # Pocketbase production data is the single source of truth at the host
 # absolute path /root/yts_pb_data_prod, bind-mounted into the container so it
@@ -57,8 +62,7 @@ services:
       start_period: 5s
 
   backend:
-    build:
-      context: ./backend
+    image: ghcr.io/niba97/youtube-summaries-backend:latest
     restart: unless-stopped
     command:
       - uvicorn
@@ -83,15 +87,7 @@ services:
       start_period: 5s
 
   frontend:
-    build:
-      context: ./frontend
-      args:
-        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-/api}
-        VITE_PB_URL: ${VITE_PB_URL:-/pb}
-        # Coolify exports SOURCE_COMMIT into the build environment; the
-        # deployed sha reaches the UI footer as a build arg, so the image
-        # build never needs .git (Coolify's checkout has none).
-        VITE_GIT_SHA: ${VITE_GIT_SHA:-${SOURCE_COMMIT:-unknown}}
+    image: ghcr.io/niba97/youtube-summaries-frontend:latest
     restart: unless-stopped
     expose:
       - "80"
