@@ -18,6 +18,20 @@ type Props = {
 
 /** Pseudo-topic id for videos with no topic, so "Unfiled" is a first-class
  *  shelf instead of an invisible remainder. */
+// "Aug 17, 07:39" — commit time in the viewer's locale, no year.
+function buildStamp(): string {
+  const sha = import.meta.env.VITE_GIT_SHA
+  const d = new Date(import.meta.env.VITE_GIT_DATE)
+  if (Number.isNaN(d.getTime())) return sha
+  const when = d.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  return `${sha} · ${when}`
+}
+
 export const UNFILED = '__unfiled__'
 
 /** Mime type carrying the dragged video's record id. A custom type means a
@@ -275,7 +289,7 @@ export function FilterRail({
           <Icon name="tag" size={16} />
           Manage tags
         </button>
-        <div className="fr-sha">{import.meta.env.VITE_GIT_SHA}</div>
+        <div className="fr-sha">{buildStamp()}</div>
       </div>
     </div>
   )
