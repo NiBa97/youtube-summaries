@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Summaries – add to library
 // @namespace    https://github.com/NiBa97/youtube-summaries
-// @version      0.2.1
+// @version      0.3.0
 // @description  Summarise the YouTube video you are watching, file it into your library, all from the watch page.
 // @match        https://www.youtube.com/*
 // @match        https://m.youtube.com/*
@@ -28,19 +28,29 @@
 (function () {
   'use strict'
 
-  const VERSION = '0.2.1'
+  const VERSION = '0.3.0'
 
-  // Status bar, pinned to the bottom. Built with createElement/textContent only
-  // (no innerHTML) and before anything else, so it shows even if the rest of the
-  // script fails. Click it to dismiss.
+  // Load indicator. A small pill that fades on its own; only errors stay (click
+  // to dismiss). Built with createElement/textContent only (no innerHTML) and
+  // before anything else, so it still shows if the rest of the script fails.
   const bar = document.createElement('div')
   bar.style.cssText =
-    'position:fixed;left:0;right:0;bottom:0;z-index:2147483647;padding:4px 12px;font:12px system-ui,sans-serif;' +
-    'background:#222;color:#fff;cursor:pointer;opacity:.92'
+    'position:fixed;left:12px;bottom:12px;z-index:2147483647;padding:4px 10px;border-radius:999px;' +
+    'font:11px system-ui,sans-serif;color:#fff;background:#222;opacity:.9;transition:opacity .6s;pointer-events:none'
   bar.addEventListener('click', () => bar.remove())
+  let fadeTimer = null
   const setStatus = (msg, isErr) => {
+    clearTimeout(fadeTimer)
     bar.textContent = `YT Summaries v${VERSION} · ${msg}`
     bar.style.background = isErr ? '#9a3b2f' : '#222'
+    bar.style.pointerEvents = isErr ? 'auto' : 'none'
+    bar.style.opacity = '.9'
+    if (!isErr) {
+      fadeTimer = setTimeout(() => {
+        bar.style.opacity = '0'
+        fadeTimer = setTimeout(() => bar.remove(), 700)
+      }, 2500)
+    }
   }
   setStatus('starting…')
   document.documentElement.appendChild(bar)
@@ -63,6 +73,31 @@
   const baseUrl = () => String(GM_getValue('baseUrl', DEFAULT_BASE)).replace(/\/+$/, '')
   const API = () => baseUrl() + '/api'
   const PB = () => baseUrl() + '/pb/api'
+
+  // Optional: hide Shorts everywhere and turn /shorts/ID links into normal watch pages.
+  const blockShorts = !!GM_getValue('blockShorts', false)
+  GM_registerMenuCommand(blockShorts ? 'Shorts: blocked (click to allow)' : 'Shorts: allowed (click to block)', () => {
+    GM_setValue('blockShorts', !blockShorts)
+    location.reload()
+  })
+  if (blockShorts) {
+    const style = document.createElement('style')
+    style.textContent = [
+      'ytd-reel-shelf-renderer', 'ytd-rich-shelf-renderer[is-shorts]', 'ytd-reel-item-renderer',
+      'ytm-shorts-lockup-view-model', 'ytm-shorts-lockup-view-model-v2', 'grid-shelf-view-model',
+      'ytd-guide-entry-renderer:has(a[title="Shorts"])', 'ytd-mini-guide-entry-renderer:has(a[title="Shorts"])',
+      'ytd-video-renderer:has(a[href^="/shorts/"])', 'ytd-rich-item-renderer:has(a[href^="/shorts/"])',
+      'yt-lockup-view-model:has(a[href^="/shorts/"])', 'ytd-grid-video-renderer:has(a[href^="/shorts/"])',
+      'yt-chip-cloud-chip-renderer:has(yt-formatted-string[title="Shorts"])',
+    ].join(',\n') + ' { display: none !important; }'
+    document.documentElement.appendChild(style)
+  }
+  function redirectShorts() {
+    if (!blockShorts) return
+    const m = location.pathname.match(/^\/shorts\/([\w-]{11})/)
+    if (m) location.replace('/watch?v=' + m[1])
+  }
+  redirectShorts()
 
   GM_registerMenuCommand('Set app URL…', () => {
     const next = window.prompt('Base URL of your YouTube Summaries instance (no trailing /api):', baseUrl())
@@ -171,7 +206,7 @@
       const v = u.searchParams.get('v')
       return v && /^[\w-]{11}$/.test(v) ? v : null
     }
-    const m = u.pathname.match(/^\/(?:shorts|live|embed)\/([\w-]{11})/)
+    const m = u.pathname.match(/^\/(?:live|embed)\/([\w-]{11})/)
     return m ? m[1] : null
   }
   const currentVideoId = () => idFromHref(location.href)
@@ -257,11 +292,12 @@
   function syncFab() {
     const id = currentVideoId()
     fab.hidden = !id
-    setStatus(id ? `loaded ✓ · video ${id} · click ＋ Summarise (bottom right) or hover any thumbnail` : 'loaded ✓ · hover a thumbnail and click ＋')
+    redirectShorts()
   }
   window.addEventListener('yt-navigate-finish', syncFab)
   setInterval(syncFab, 1500) // m.youtube.com and edge cases don't fire yt-navigate-finish
   syncFab()
+  setStatus('loaded ✓' + (blockShorts ? ' · Shorts blocked' : ''))
 
   // Open the panel for a given video. A run in flight is never clobbered; a
   // finished or idle one is replaced when you pick a different video.
@@ -302,7 +338,7 @@
         clearTimeout(hideTimer)
         return
       }
-      const a = e.target instanceof Element && e.target.closest('a[href*="/watch?v="], a[href^="/shorts/"], a[href^="/live/"]')
+      const a = e.target instanceof Element && e.target.closest('a[href*="/watch?v="], a[href^="/live/"]')
       const id = a && idFromHref(a.getAttribute('href'))
       // Only anchors that wrap a thumbnail, not title links.
       if (!id || !a.querySelector('img, yt-image, yt-thumbnail-view-model, yt-collection-thumbnail-view-model, .yt-core-image')) return

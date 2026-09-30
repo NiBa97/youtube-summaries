@@ -9,3 +9,7 @@ Adds a **＋** button on every thumbnail you hover (home, search, sidebar, subsc
 3. Approve the `@connect` prompt on first request.
 
 Requests use `GM_xmlhttpRequest`, so YouTube's CSP and CORS don't apply. A video already in the library is not overwritten – re-summarise from the app.
+
+## Shorts
+
+The ＋ button never appears on Shorts. Tampermonkey menu → **Shorts: allowed (click to block)** hides Shorts shelves, cards and the sidebar entry everywhere and redirects `/shorts/ID` to the normal watch page. Off by default; the page reloads on toggle.
