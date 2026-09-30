@@ -1,0 +1,15 @@
+# Tampermonkey userscript
+
+Adds a **＋** button on every thumbnail you hover (home, search, sidebar, subscriptions) and a **＋ Summarise** button on watch pages. Runs the same pipeline as the app's *Add video* dialog: `/api/slides` → pick topic/tags → write to Pocketbase.
+
+## Install
+
+1. Edge → Tampermonkey → *Create a new script* → paste `youtube-summaries.user.js` → save.
+2. Tampermonkey menu on a YouTube tab → **Set app URL…** (default `http://localhost`; use your tunnel/prod origin, no trailing `/api`).
+3. Approve the `@connect` prompt on first request.
+
+Requests use `GM_xmlhttpRequest`, so YouTube's CSP and CORS don't apply. A video already in the library is not overwritten – re-summarise from the app.
+
+## Shorts
+
+The ＋ button never appears on Shorts. Tampermonkey menu → **Shorts: allowed (click to block)** hides Shorts shelves, cards and the sidebar entry everywhere and redirects `/shorts/ID` to the normal watch page. Off by default; the page reloads on toggle.
