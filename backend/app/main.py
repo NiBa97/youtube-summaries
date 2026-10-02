@@ -158,8 +158,12 @@ _BLOCK_VARIANT_BY_TYPE = {
 _MAX_REPORTED_ERRORS = 8
 
 
-def _deck_validation_error(payload: dict[str, Any]) -> str | None:
+def _deck_validation_error(payload: dict[str, Any], min_blocks: int = 1) -> str | None:
     """Validate a raw deck dict, returning a compact error report or None.
+
+    `min_blocks` is the floor of the duration budget. Asking for it in the
+    prompt alone was not enough: the model kept writing six blocks for a
+    73-minute video, so a short deck goes back through the repair loop.
 
     Pydantic reports a failing block against every union member, so a single
     mistake yields ~15 errors. Keep only the ones for the variant the block
@@ -194,6 +198,11 @@ def _deck_validation_error(payload: dict[str, Any]) -> str | None:
         if len(lines) > _MAX_REPORTED_ERRORS:
             report += f"\n(+{len(lines) - _MAX_REPORTED_ERRORS} more)"
         return report
+    if len(payload["blocks"]) < min_blocks:
+        return (
+            f"blocks: {len(payload['blocks'])} blocks is too few for this video's length; "
+            f"write at least {min_blocks}, covering the whole transcript start to end"
+        )
     return None
 
 
@@ -664,15 +673,15 @@ def _fmt_duration(seconds: float) -> str:
     return f"{m}:{sec:02d}"
 
 
-def _block_budget(seconds: int) -> str:
+def _block_budget(seconds: int) -> tuple[int, int]:
     """Block range to ask for. A fixed 3-7 squeezed an hour-long video into the
     same handful of blocks as a five-minute one."""
     minutes = seconds / 60
     if minutes <= 15:
-        return "3-7"
+        return 3, 7
     if minutes <= 45:
-        return "6-12"
-    return f"10-{MAX_DECK_BLOCKS - 2}"
+        return 6, 12
+    return 10, MAX_DECK_BLOCKS - 2
 
 
 def _duration_seconds(snippets) -> int:
@@ -689,18 +698,19 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
 
     transcript_text = format_snippets_for_llm(fetched.snippets)
     duration_s = _duration_seconds(fetched.snippets)
+    min_blocks, max_blocks = _block_budget(duration_s)
 
     try:
         raw_deck = generate_deck(
             channel=req.channel or "one-shot",
             title=req.title or f"YouTube {video_id}",
             duration=_fmt_duration(duration_s),
-            block_budget=_block_budget(duration_s),
+            block_budget=f"{min_blocks}-{max_blocks}",
             transcript_text=transcript_text,
             transcript_language=fetched.language,
             instructions=req.instructions,
             previous_deck=_deck_for_rerun(req.previous_deck) if req.previous_deck else None,
-            validate=_deck_validation_error,
+            validate=lambda payload: _deck_validation_error(payload, min_blocks),
         )
         deck = Deck.model_validate(raw_deck)
     except ValidationError as exc:

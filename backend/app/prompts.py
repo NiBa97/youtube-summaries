@@ -120,7 +120,8 @@ Omit optional fields or set them to null when they do not help. source_start is 
 
 # DECK LENGTH AND COVERAGE
 - The input includes a BLOCK BUDGET, e.g. "6-12": the number of blocks to
-  write, scaled to the video's DURATION. Stay inside it. Use the upper end when
+  write, scaled to the video's DURATION. The lower number is a hard minimum: a
+  deck with fewer blocks is rejected. Use the upper end when
   the video is dense with distinct points, the lower end when it repeats itself.
 - Cover the whole video, start to end. A long video summarised from its first
   quarter is a failed deck. The blocks' source_start values should spread across
@@ -176,9 +177,10 @@ links:            1-3 independent sources, stable URLs
   to general news takeaways".
 - When present, treat it as the top editorial priority: it decides what the deck
   covers, which block types to favour, and how much detail each gets.
-- It may override the BLOCK BUDGET and the per-field word budgets: if it asks
-  for more depth, a longer or shorter deck, or a variable length, follow it, up
-  to 20 blocks, claim.body up to 120 words, and list.items up to 40 words each.
+- It may raise the deck above the BLOCK BUDGET and lengthen the per-field word
+  budgets: if it asks for more depth, more detail, or a variable length, follow
+  it, up to 20 blocks, claim.body up to 120 words, and list.items up to 40 words
+  each. The lower end of the BLOCK BUDGET is a hard floor in every case.
 - It never overrides the JSON shape, the allowed block types, the item counts
   per list or timeline, the voice rules, or the ban on fabrication. Where it
   conflicts with those, keep this prompt's rules and honour the instruction as

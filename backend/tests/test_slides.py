@@ -413,6 +413,6 @@ def test_comments_endpoint_fails_loudly(mock_comments):
 
 
 def test_block_budget_scales_with_duration():
-    assert _block_budget(6 * 60) == "3-7"
-    assert _block_budget(30 * 60) == "6-12"
-    assert _block_budget(60 * 60) == "10-18"
+    assert _block_budget(6 * 60) == (3, 7)
+    assert _block_budget(30 * 60) == (6, 12)
+    assert _block_budget(60 * 60) == (10, 18)

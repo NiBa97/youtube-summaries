@@ -76,10 +76,16 @@ def test_deck_accepts_a_long_video_worth_of_blocks():
     assert _deck_validation_error(payload) is not None
 
 
+def test_deck_below_the_block_floor_is_rejected():
+    payload = {**VALID_DECK, "blocks": [{"type": "claim", "title": "t", "body": "b"}] * 6}
+    assert "at least 10" in _deck_validation_error(payload, min_blocks=10)
+    assert _deck_validation_error(payload, min_blocks=6) is None
+
+
 def test_prompt_lets_instructions_override_deck_length():
     assert "3-7 blocks" not in DECK_SYSTEM_PROMPT
     assert "7-block cap" not in DECK_SYSTEM_PROMPT
-    assert "It may override the BLOCK BUDGET" in DECK_SYSTEM_PROMPT
+    assert "It may raise the deck above the BLOCK BUDGET" in DECK_SYSTEM_PROMPT
 
 
 def test_previous_deck_included_in_prompt():
