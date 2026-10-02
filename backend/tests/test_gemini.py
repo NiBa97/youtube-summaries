@@ -64,6 +64,24 @@ def test_instructions_omitted_when_blank():
     assert "INSTRUCTIONS:" not in fake.prompts[0]
 
 
+def test_block_budget_included_in_prompt():
+    fake, _ = _run([json.dumps(VALID_DECK)], block_budget="10-18")
+    assert "BLOCK BUDGET: 10-18" in fake.prompts[0]
+
+
+def test_deck_accepts_a_long_video_worth_of_blocks():
+    payload = {**VALID_DECK, "blocks": [{"type": "claim", "title": "t", "body": "b"}] * 18}
+    assert _deck_validation_error(payload) is None
+    payload["blocks"] = payload["blocks"] * 2
+    assert _deck_validation_error(payload) is not None
+
+
+def test_prompt_lets_instructions_override_deck_length():
+    assert "3-7 blocks" not in DECK_SYSTEM_PROMPT
+    assert "7-block cap" not in DECK_SYSTEM_PROMPT
+    assert "It may override the BLOCK BUDGET" in DECK_SYSTEM_PROMPT
+
+
 def test_previous_deck_included_in_prompt():
     fake, _ = _run([json.dumps(VALID_DECK)], previous_deck="Old title\nOld tldr\nOld claim. Old body")
     assert "PREVIOUS SUMMARY:\nOld title" in fake.prompts[0]

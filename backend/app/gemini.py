@@ -54,6 +54,7 @@ def generate_deck(
     title: str,
     duration: str,
     transcript_text: str,
+    block_budget: str | None = None,
     transcript_language: str | None = None,
     instructions: str | None = None,
     previous_deck: str | None = None,
@@ -79,6 +80,10 @@ def generate_deck(
     if transcript_language and transcript_language.strip():
         language_line = f"LANGUAGE:     {transcript_language.strip()}\n"
 
+    budget_line = ""
+    if block_budget:
+        budget_line = f"BLOCK BUDGET: {block_budget}\n"
+
     previous_block = ""
     if previous_deck and previous_deck.strip():
         previous_block = f"PREVIOUS SUMMARY:\n{previous_deck.strip()}\n"
@@ -87,6 +92,7 @@ def generate_deck(
         f"CHANNEL:      {channel}\n"
         f"TITLE:        {title}\n"
         f"DURATION:     {duration}\n"
+        f"{budget_line}"
         f"{language_line}"
         f"{instruction_line}"
         f"{previous_block}"

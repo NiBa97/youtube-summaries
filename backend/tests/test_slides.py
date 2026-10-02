@@ -8,7 +8,7 @@ from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisable
 
 from app.comments import Comment, CommentsError
 from app.comments import Comment, CommentsError
-from app.main import app
+from app.main import _block_budget, app
 
 client = TestClient(app)
 
@@ -83,6 +83,7 @@ def test_slides_endpoint_happy(mock_api_cls, mock_gen):
     assert kwargs["channel"] == "one-shot"
     assert kwargs["title"] == "YouTube dQw4w9WgXcQ"
     assert kwargs["duration"] == "0:06"
+    assert kwargs["block_budget"] == "3-7"
     transcript_text = kwargs["transcript_text"]
     assert transcript_text.startswith("[0] hello world")
     assert "[2] second line" in transcript_text
@@ -409,3 +410,9 @@ def test_comments_endpoint_fails_loudly(mock_comments):
     mock_comments.side_effect = CommentsError("Comment fetch failed: boom")
     r = client.get("/comments", params={"url": "dQw4w9WgXcQ"})
     assert r.status_code == 502
+
+
+def test_block_budget_scales_with_duration():
+    assert _block_budget(6 * 60) == "3-7"
+    assert _block_budget(30 * 60) == "6-12"
+    assert _block_budget(60 * 60) == "10-18"

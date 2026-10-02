@@ -136,10 +136,16 @@ class Community(BaseModel):
     notes: list[CommunityNote] = Field(default_factory=list, max_length=4)
 
 
+# Outer bound only. How many blocks a video deserves depends on its length and
+# is asked for in the prompt (see _block_budget); the schema just stops runaway
+# output.
+MAX_DECK_BLOCKS = 20
+
+
 class Deck(BaseModel):
     title: str
     tldr: str
-    blocks: list[DeckBlock] = Field(..., min_length=1, max_length=7)
+    blocks: list[DeckBlock] = Field(..., min_length=1, max_length=MAX_DECK_BLOCKS)
     community: Community | None = None
 
 _BLOCK_VARIANT_BY_TYPE = {
@@ -658,6 +664,17 @@ def _fmt_duration(seconds: float) -> str:
     return f"{m}:{sec:02d}"
 
 
+def _block_budget(seconds: int) -> str:
+    """Block range to ask for. A fixed 3-7 squeezed an hour-long video into the
+    same handful of blocks as a five-minute one."""
+    minutes = seconds / 60
+    if minutes <= 15:
+        return "3-7"
+    if minutes <= 45:
+        return "6-12"
+    return f"10-{MAX_DECK_BLOCKS - 2}"
+
+
 def _duration_seconds(snippets) -> int:
     if not snippets:
         return 0
@@ -678,6 +695,7 @@ def post_slides(req: SlidesRequest) -> SlidesResponse:
             channel=req.channel or "one-shot",
             title=req.title or f"YouTube {video_id}",
             duration=_fmt_duration(duration_s),
+            block_budget=_block_budget(duration_s),
             transcript_text=transcript_text,
             transcript_language=fetched.language,
             instructions=req.instructions,

@@ -35,11 +35,31 @@ function blocksFor(video: Video): DeckBlock[] {
   return video.deck?.blocks?.length ? video.deck.blocks : legacyBlocks(video)
 }
 
-function blockText(block: Exclude<DeckBlock, { type: 'list' }>): string {
-  if (block.type === 'claim') return block.body
-  if (block.type === 'metric') return [block.label, block.body].filter(Boolean).join(' ')
-  if (block.type === 'quote') return block.text
-  return block.items.map((it) => `${it.marker}: ${it.text}`).join(' ')
+function BlockBody({ block }: { block: DeckBlock }) {
+  if (block.type === 'list') {
+    return (
+      <ul style={listStyle}>
+        {block.items.map((item, i) => <li key={i} style={listItemStyle}><RichText text={item} /></li>)}
+      </ul>
+    )
+  }
+  if (block.type === 'timeline') {
+    return (
+      <div style={timelineStyle}>
+        {block.items.map((item, i) => (
+          <div key={i} style={{ display: 'contents' }}>
+            <span style={timelineMarkerStyle}>{item.marker}</span>
+            <span><RichText text={item.text} /></span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+  const text =
+    block.type === 'claim' ? block.body
+      : block.type === 'metric' ? [block.label, block.body].filter(Boolean).join(' ')
+        : block.text
+  return <p style={bodyStyle}><RichText text={text} /></p>
 }
 
 function blockTitle(block: DeckBlock): string {
@@ -108,15 +128,7 @@ export function DeckPanel({ video, topic, onJump, onSaved }: Props) {
 
               <div style={{ minWidth: 0 }}>
                 <h3 style={sectionTitleStyle}>{stripRichText(blockTitle(block))}</h3>
-                {block.type === 'list' ? (
-                  <ul style={listStyle}>
-                    {block.items.map((item, j) => (
-                      <li key={j} style={listItemStyle}><RichText text={item} /></li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p style={bodyStyle}><RichText text={blockText(block)} /></p>
-                )}
+                <BlockBody block={block} />
                 {block.caveat ? <BlockCaveat caveat={block.caveat} /> : null}
                 {block.links?.length ? <SourceLinks links={block.links} /> : null}
               </div>
@@ -373,6 +385,21 @@ const listStyle: React.CSSProperties = {
 
 const listItemStyle: React.CSSProperties = {
   paddingLeft: 2,
+}
+
+const timelineStyle: React.CSSProperties = {
+  ...bodyStyle,
+  display: 'grid',
+  gridTemplateColumns: 'auto 1fr',
+  columnGap: 12,
+  rowGap: 4,
+}
+
+const timelineMarkerStyle: React.CSSProperties = {
+  fontFamily: 'var(--mono)',
+  fontSize: 12,
+  color: 'var(--ink)',
+  fontVariantNumeric: 'tabular-nums',
 }
 
 const sourceLinksStyle: React.CSSProperties = {
