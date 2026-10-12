@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Summaries – add to library
 // @namespace    https://github.com/NiBa97/youtube-summaries
-// @version      0.3.0
+// @version      0.3.1
 // @description  Summarise the YouTube video you are watching, file it into your library, all from the watch page.
 // @match        https://www.youtube.com/*
 // @match        https://m.youtube.com/*
@@ -28,12 +28,13 @@
 (function () {
   'use strict'
 
-  const VERSION = '0.3.0'
+  const VERSION = '0.3.1'
 
   // Load indicator. A small pill that fades on its own; only errors stay (click
   // to dismiss). Built with createElement/textContent only (no innerHTML) and
   // before anything else, so it still shows if the rest of the script fails.
   const bar = document.createElement('div')
+  bar.id = 'yts-bar'
   bar.style.cssText =
     'position:fixed;left:12px;bottom:12px;z-index:2147483647;padding:4px 10px;border-radius:999px;' +
     'font:11px system-ui,sans-serif;color:#fff;background:#222;opacity:.9;transition:opacity .6s;pointer-events:none'
@@ -52,6 +53,16 @@
       }, 2500)
     }
   }
+  // Stay out of the way while watching: hide everything in fullscreen and theater
+  // (cinema) mode. Pure CSS, so it reacts instantly with no observers. The
+  // :not([hidden]) guard matters - YouTube keeps ytd-watch-flexy (and its
+  // [theater] attribute) in the DOM after you navigate away from a video.
+  const hideStyle = document.createElement('style')
+  hideStyle.textContent =
+    'html:has(ytd-watch-flexy[theater]:not([hidden])) :is(#yts-host,#yts-bar),' +
+    'html:has(ytd-watch-flexy[fullscreen]:not([hidden])) :is(#yts-host,#yts-bar),' +
+    'html:has(:fullscreen) :is(#yts-host,#yts-bar) { display: none !important; }'
+  document.documentElement.appendChild(hideStyle)
   setStatus('starting…')
   document.documentElement.appendChild(bar)
   window.addEventListener('error', (e) => {
@@ -263,12 +274,13 @@
       -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     .countdown { height: 3px; margin: 14px -16px -16px; background: #eee6d6; border-radius: 0 0 12px 12px; overflow: hidden; }
     .countdown i { display: block; height: 100%; background: #3f6b46; transform-origin: left;
-      animation: drain var(--ms, 4000ms) linear forwards; }
+      animation: drain var(--ms, 5000ms) linear forwards; }
     .panel:hover .countdown i { animation-play-state: paused; }
     @keyframes drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
   `
 
   const host = document.createElement('div')
+  host.id = 'yts-host'
   const root = host.attachShadow({ mode: 'open' })
   setHTML(root, `<style>${CSS}</style><button class="fab" hidden>＋ Summarise</button><button class="thumb" title="Summarise this video" hidden>＋</button><div class="panel" hidden></div>`)
   const fab = root.querySelector('.fab')
@@ -474,7 +486,7 @@
 
   // The success card dismisses itself. Hovering it pauses the countdown (CSS)
   // and the timer, so a link you are reaching for does not vanish.
-  const AUTO_CLOSE_MS = 4000
+  const AUTO_CLOSE_MS = 5000
   let closeTimer = null
   function armAutoClose(my) {
     clearTimeout(closeTimer)
